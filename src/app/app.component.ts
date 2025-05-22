@@ -13,5 +13,6 @@ export class AppComponent {
 
   onClick() {
     console.log('Button clicked!');
+    alert('Button clicked!');
   }
 }

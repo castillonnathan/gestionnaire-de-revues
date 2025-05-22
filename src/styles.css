@@ -1,1 +1,7 @@
-/* You can add global styles to this file, and also import other style files */
+body {
+    margin: 0;
+    padding: 0;
+    min-height: 100vh; /* Assure que le body prend au minimum toute la hauteur de l'écran */
+    background: linear-gradient(135deg, #ff69b4, #87ceeb);
+    background-attachment: fixed; /* Le dégradé reste fixe même quand on scroll */
+}

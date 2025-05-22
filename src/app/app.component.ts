@@ -11,8 +11,11 @@ import { RouterOutlet } from '@angular/router';
 export class AppComponent {
   title = 'gestionnaire-de-revues';
 
-  onClick() {
-    console.log('Button clicked!');
-    alert('Button clicked!');
+  countClicks() {
+    let count = 0;
+    return function() {
+      count++;
+      console.log(`Button clicked ${count} times`);
+    };
   }
 }

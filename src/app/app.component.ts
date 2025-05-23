@@ -1,11 +1,13 @@
 import { Component } from '@angular/core';
 import { RevueComponent } from "./revue/revue.component";
+import { Router, RouterLink, RouterLinkWithHref, RouterModule, RouterOutlet} from '@angular/router';
 
 @Component({
   selector: 'app-root',
+  standalone: true,
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css'],
-  imports: [RevueComponent]
+  imports: [RevueComponent, RouterOutlet]
 })
 export class AppComponent {
   title = 'gestionnaire-de-revues';

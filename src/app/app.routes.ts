@@ -14,10 +14,10 @@ export const routes: Routes = [{
     pathMatch: 'full'
 }, {
     path: 'home',
-    component: RevueComponent
+    component: HomeComponent
 }, {
     path: 'revue',
-    component: HomeComponent
+    component: RevueComponent
 }, {
     path:'article',
     component: ArticleComponent

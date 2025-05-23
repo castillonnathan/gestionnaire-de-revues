@@ -1,0 +1,11 @@
+form {
+    max-width: 300px;
+}
+.form-field {
+    display: flex;
+    flex-direction: column;
+    margin: 10px 0;
+}
+label {
+    font-size: small;
+}

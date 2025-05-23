@@ -1,12 +1,11 @@
-import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import { RevueComponent } from "./revue/revue.component";
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, CommonModule],
   templateUrl: './app.component.html',
-  styleUrl: './app.component.css'
+  styleUrls: ['./app.component.css'],
+  imports: [RevueComponent]
 })
 export class AppComponent {
   title = 'gestionnaire-de-revues';
@@ -15,7 +14,7 @@ export class AppComponent {
     let count = 0;
     return function() {
       count++;
-      console.log(`Button clicked ${count} times`);
-    };
+      console.log('Button clicked ${count} times');
+   };
   }
 }

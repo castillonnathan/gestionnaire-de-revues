@@ -1,1 +1,67 @@
-<p>test works!</p>
+<div class="container">
+      <h2>Ajouter une nouvelle revue</h2>
+      
+      <form [formGroup]="revueForm" (ngSubmit)="onSubmit()">
+        
+        <!-- Numéro de revue -->
+        <div class="form-group">
+          <label for="numrevue">Numéro de revue :</label>
+          <input 
+            type="number" 
+            id="numrevue" 
+            formControlName="numRevue"
+            class="form-control"
+            [class.error]="revueForm.get('numRevue')?.invalid && revueForm.get('numRevue')?.touched">
+          <div *ngIf="revueForm.get('numRevue')?.invalid && revueForm.get('numRevue')?.touched" class="error-message">
+            Le numéro de revue est requis
+          </div>
+        </div>
+
+        <!-- Titre -->
+        <div class="form-group">
+          <label for="titre">Titre de la revue :</label>
+          <input 
+            type="text" 
+            id="titre" 
+            formControlName="titre"
+            class="form-control"
+            [class.error]="revueForm.get('titre')?.invalid && revueForm.get('titre')?.touched">
+          <div *ngIf="revueForm.get('titre')?.invalid && revueForm.get('titre')?.touched" class="error-message">
+            Le titre est requis
+          </div>
+        </div>
+
+        <!-- Date de sortie -->
+        <div class="form-group">
+          <label for="date">Date de sortie :</label>
+          <input 
+            type="date" 
+            id="date" 
+            formControlName="dateSortie"
+            class="form-control"
+            [class.error]="revueForm.get('dateSortie')?.invalid && revueForm.get('dateSortie')?.touched">
+          <div *ngIf="revueForm.get('dateSortie')?.invalid && revueForm.get('dateSortie')?.touched" class="error-message">
+            La date de sortie est requise
+          </div>
+        </div>
+
+        <!-- Bouton submit -->
+        <button 
+          type="submit" 
+          [disabled]="revueForm.invalid || isSubmitting"
+          class="btn-submit">
+          {{ isSubmitting ? 'Enregistrement...' : 'Enregistrer' }}
+        </button>
+        
+      </form>
+
+      <!-- Message de succès -->
+      <div *ngIf="submitSuccess" class="success-message">
+        Revue enregistrée avec succès !
+      </div>
+
+      <!-- Message d'erreur -->
+      <div *ngIf="submitError" class="error-message">
+        Erreur lors de l'enregistrement : {{ submitError }}
+      </div>
+    </div>

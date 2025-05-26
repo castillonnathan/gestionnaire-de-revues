@@ -43,8 +43,8 @@ export class RevueComponent {
     });*/
     
 
-      this.revueList = toSignal( collectionData(itemCollection),{initialValue: [], injector: this.injector}) ;
-      this.Une_revue = toSignal( collectionData(revue_collection),{initialValue: [], injector: this.injector}) ;
+      this.revueList = toSignal( collectionData(itemCollection),{initialValue: [], injector: this.injector}) ; // select * from revue
+      this.Une_revue = toSignal( collectionData(revue_collection),{initialValue: [], injector: this.injector}) ; // select * from revue where num_revue = 2
     /*this.revueList = toSignal(revueObservable, { initialValue: [], injector: this.injector });*/
   }
 

@@ -1,12 +1,30 @@
 <select [ngModel]="selectedTitre()" (ngModelChange)="selectedTitre.set($event)">
   <option value="">-- Toutes --</option>
-  <option *ngFor="let revue of revueList()" [value]="revue.titre_revue">
-    {{ revue.titre_revue }}
-  </option>
+  @for ( revue of revueList(); track revue) {
+    <option>
+      {{ revue.date_sortie }}
+      {{ revue.titre_revue }}
+      {{ revue.num_revue}}
+    </option>
+  }
+  <!-- option "let revue of revueList()" [value]="revue.titre_revue" -->
+   <!-- {{ revue.titre_revue }} -->
+</select>
+<select [ngModel]="selectedTitre()" (ngModelChange)="selectedTitre.set($event)">
+  <option value="">-- Toutes --</option>
+  @for ( revue of Une_revue(); track revue) {
+    <option>
+      {{ revue.date_sortie }}
+      {{ revue.titre_revue }}
+      {{ revue.num_revue}}
+    </option>
+  }
+  <!-- option "let revue of revueList()" [value]="revue.titre_revue" -->
+   <!-- {{ revue.titre_revue }} -->
 </select>
 
-<ul>
-  <li *ngFor="let revue of filteredRevue">
+<!--<ul>
+  <li *ngFor="let revue of filteredRevue()">
     {{ revue.titre_revue }} (n°{{ revue.num_revue }}) - Sortie : {{ revue.date_sortie }}
   </li>
-</ul>
+</ul>-->

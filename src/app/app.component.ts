@@ -7,7 +7,7 @@ import { Router, RouterLink, RouterLinkWithHref, RouterModule, RouterOutlet} fro
   standalone: true,
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css'],
-  imports: [RevueComponent, RouterOutlet]
+  imports: [RouterOutlet]
 })
 export class AppComponent {
   title = 'gestionnaire-de-revues';

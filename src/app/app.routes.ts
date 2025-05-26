@@ -24,4 +24,7 @@ export const routes: Routes = [{
 }, {
     path: 'a-propos',
     component: AProposComponent
+}{
+    path: 'test',
+    component: LoginFormComponent
 }];

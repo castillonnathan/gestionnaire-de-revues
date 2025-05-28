@@ -387,3 +387,17 @@
                 font-size: 2rem;
             }
         }
+        .delete-btn {
+            background-color: #e63946;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            margin-left: 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            }
+
+            .delete-btn:hover {
+            background-color: #d62828;
+            }

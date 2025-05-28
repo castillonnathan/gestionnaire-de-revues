@@ -1,6 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
-import { Firestore, collection, addDoc, query, where, getDocs, orderBy, doc, updateDoc } from '@angular/fire/firestore';
+import { Firestore, collection, addDoc, query, where, getDocs, orderBy, doc, updateDoc, deleteDoc } from '@angular/fire/firestore';
 import { CommonModule } from '@angular/common';
 
 @Component({
@@ -217,6 +217,27 @@ export class RevueFormComponent {
       document.querySelector('.edit-section')?.scrollIntoView({ behavior: 'smooth' }); // Faire défiler vers la section d'édition
     }, 100); // 100 millisecondes
   }
+
+  async deleteRevue(revueId: string) {
+  if (confirm('Voulez-vous vraiment supprimer cette revue ?')) {
+    try {
+      const docRef = doc(this.firestore, 'revue', revueId); // Référence au document à supprimer
+      await deleteDoc(docRef); // Suppression du document
+
+      // Mettre à jour la liste après suppression
+      if (this.searchResults.length > 0) {
+        await this.searchAllRevues();
+      }
+
+      alert('Revue supprimée avec succès.');
+
+    } catch (error) {
+      console.error('Erreur lors de la suppression :', error);
+      alert('Une erreur est survenue lors de la suppression de la revue.');
+    }
+  }
+}
+
 
   cancelEdit() {
     this.isEditing = false; // Réinitialiser l'état d'édition

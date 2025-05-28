@@ -42,7 +42,9 @@
                         [disabled]="searchForm.invalid || isSearching"
                         class="btn btn-primary"
                     >
-                        <span *ngIf="isSearching" class="spinner"></span>
+                        @if (isSearching) {
+                            <span class="spinner"></span>
+                        }
                         {{ isSearching ? 'Recherche...' : 'Rechercher' }}
                     </button>
 
@@ -90,6 +92,7 @@
                             >
                                 Modifier
                             </button>
+                            <button class="delete-btn" (click)="deleteRevue(revue.id)">Supprimer</button>
                         </div>
                     </div>
                 </div>

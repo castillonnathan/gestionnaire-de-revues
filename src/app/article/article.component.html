@@ -1,1 +1,110 @@
-<p>article works!</p>
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion des Articles</title>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Gestion des Articles</h1>
+            <p class="subtitle">Recherchez et gérez vos articles facilement</p>
+        </header>
+
+        <!-- Section de recherche -->
+        <div class="search-section">
+            <div class="search-bar">
+                <input type="text" id="searchInput" class="search-input" placeholder="Rechercher par titre, numéro d'article ou numéro de page...">
+                <button class="search-btn">Rechercher</button>
+            </div>
+        </div>
+
+        <!-- Formulaire d'ajout -->
+        <div class="form-section">
+            <h2 class="form-title">Ajouter un nouvel article</h2>
+            <form id="articleForm">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label" for="articleNumber">Numéro d'article *</label>
+                        <input type="text" id="articleNumber" class="form-input" required placeholder="Ex: ART001">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="articleTitle">Titre de l'article *</label>
+                        <input type="text" id="articleTitle" class="form-input" required placeholder="Titre de l'article">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="pageNumber">Numéro de page</label>
+                        <input type="number" id="pageNumber" class="form-input" placeholder="Ex: 42">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="articleContent">Contenu de l'article</label>
+                    <textarea id="articleContent" class="form-input form-textarea" placeholder="Contenu détaillé de l'article..."></textarea>
+                </div>
+                <div style="margin-top: 1.5rem;">
+                    <button type="submit" class="form-btn">Ajouter l'article</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Section des articles -->
+        <div class="articles-section">
+            <h2 class="articles-title">Liste des articles</h2>
+            <div class="articles-grid">
+                <!-- Article 1 -->
+                <div class="article-card">
+                    <div class="article-number">Article ART001</div>
+                    <h3 class="article-title">Introduction aux technologies web</h3>
+                    <div class="article-page">Page 12</div>
+                    <div class="article-content">Cet article présente les bases des technologies web modernes, incluant HTML5, CSS3 et JavaScript ES6. Une introduction complète pour débuter dans le développement web.</div>
+                </div>
+
+                <!-- Article 2 -->
+                <div class="article-card">
+                    <div class="article-number">Article ART002</div>
+                    <h3 class="article-title">Responsive Design et Mobile First</h3>
+                    <div class="article-page">Page 28</div>
+                    <div class="article-content">Guide complet pour créer des interfaces adaptatives qui fonctionnent sur tous les appareils. Techniques et bonnes pratiques pour le design mobile.</div>
+                </div>
+
+                <!-- Article 3 -->
+                <div class="article-card">
+                    <div class="article-number">Article ART003</div>
+                    <h3 class="article-title">Optimisation des performances</h3>
+                    <div class="article-page">Page 45</div>
+                    <div class="article-content">Techniques avancées pour améliorer la vitesse et l'efficacité des applications web. Méthodes de mesure et d'optimisation des performances.</div>
+                </div>
+
+                <!-- Article 4 -->
+                <div class="article-card">
+                    <div class="article-number">Article ART004</div>
+                    <h3 class="article-title">Sécurité des applications web</h3>
+                    <div class="article-page">Page 67</div>
+                    <div class="article-content">Principes fondamentaux de la sécurité web, protection contre les vulnérabilités communes et mise en place de bonnes pratiques de sécurité.</div>
+                </div>
+
+                <!-- Article 5 -->
+                <div class="article-card">
+                    <div class="article-number">Article ART005</div>
+                    <h3 class="article-title">Base de données et API REST</h3>
+                    <div class="article-page">Page 89</div>
+                    <div class="article-content">Architecture et conception d'API REST, intégration avec les bases de données et gestion des données dans les applications modernes.</div>
+                </div>
+
+                <!-- Article 6 -->
+                <div class="article-card">
+                    <div class="article-number">Article ART006</div>
+                    <h3 class="article-title">Tests automatisés et CI/CD</h3>
+                    <div class="article-page">Page 112</div>
+                    <div class="article-content">Mise en place de tests unitaires et d'intégration, configuration des pipelines de déploiement continu pour une meilleure qualité logicielle.</div>
+                </div>
+            </div>
+            
+            <div class="no-results">
+                Aucun article trouvé.
+            </div>
+        </div>
+    </div>
+</body>
+</html>

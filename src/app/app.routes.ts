@@ -4,7 +4,6 @@ import { HomeComponent } from './home/home.component';
 import { RevueComponent } from './revue/revue.component';
 import { ArticleComponent } from './article/article.component';
 import { AProposComponent } from './a-propos/a-propos.component';
-import { RevueFormComponent } from './test/test.component';
 
 export const routes: Routes = [{
     path: 'recherches',
@@ -25,7 +24,4 @@ export const routes: Routes = [{
 }, {
     path: 'a-propos',
     component: AProposComponent
-}, {
-    path: 'test',
-    component: RevueFormComponent
 }];

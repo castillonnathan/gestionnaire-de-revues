@@ -1,30 +1,218 @@
-<select [ngModel]="selectedTitre()" (ngModelChange)="selectedTitre.set($event)">
-  <option value="">-- Toutes --</option>
-  @for ( revue of revueList(); track revue) {
-    <option>
-      {{ revue.date_sortie }}
-      {{ revue.titre_revue }}
-      {{ revue.num_revue}}
-    </option>
-  }
-  <!-- option "let revue of revueList()" [value]="revue.titre_revue" -->
-   <!-- {{ revue.titre_revue }} -->
-</select>
-<select [ngModel]="selectedTitre()" (ngModelChange)="selectedTitre.set($event)">
-  <option value="">-- Toutes --</option>
-  @for ( revue of Une_revue(); track revue) {
-    <option>
-      {{ revue.date_sortie }}
-      {{ revue.titre_revue }}
-      {{ revue.num_revue}}
-    </option>
-  }
-  <!-- option "let revue of revueList()" [value]="revue.titre_revue" -->
-   <!-- {{ revue.titre_revue }} -->
-</select>
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gestion des Revues - Template Angular</title>
+</head>
+<body>
+  <div class="container">
+    <h1>Gestion des Revues</h1>
 
-<!--<ul>
-  <li *ngFor="let revue of filteredRevue()">
-    {{ revue.titre_revue }} (n°{{ revue.num_revue }}) - Sortie : {{ revue.date_sortie }}
-  </li>
-</ul>-->
+    <!-- Section de recherche -->
+    <div class="search-section">
+      <h2>Rechercher des revues</h2>
+
+      <form [formGroup]="searchForm" (ngSubmit)="searchRevue()" class="search-form">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="searchType">Type de recherche :</label>
+            <select id="searchType" formControlName="searchType" class="form-control">
+              <option value="titre">Par titre</option>
+              <option value="id">Par numéro de revue</option>
+              <option value="date">Par date de sortie</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="searchTerm">Terme de recherche :</label>
+            <input 
+              type="text" 
+              id="searchTerm" 
+              formControlName="searchTerm" 
+              class="form-control"
+              [placeholder]="getSearchPlaceholder()"
+            />
+          </div>
+        </div>
+
+        <div class="button-group">
+          <button 
+            type="submit" 
+            [disabled]="searchForm.invalid || isSearching"
+            class="btn btn-primary"
+          >
+            @if (isSearching) {
+              <span class="spinner"></span>
+            }
+            {{ isSearching ? 'Recherche...' : 'Rechercher' }}
+          </button>
+
+          <button 
+            type="button" 
+            (click)="searchAllRevues()" 
+            [disabled]="isSearching"
+            class="btn btn-secondary"
+          >
+            Toutes les revues
+          </button>
+
+          <button 
+            type="button" 
+            (click)="clearSearch()" 
+            class="btn btn-outline"
+          >
+            Effacer
+          </button>
+         <button 
+              type="button" 
+              (click)="addRevue(0)" 
+              class="btn-edit"
+          >
+              Ajout
+              </button>
+        </div>
+      </form>
+
+      <!-- Erreurs de recherche -->
+      @if (searchError) {
+        <div class="alert alert-error">
+          {{ searchError }}
+        </div>
+      }
+
+      <!-- Résultats de recherche -->
+      @if (searchResults.length > 0) {
+        <div class="results-section">
+          <h3>Résultats ({{ searchResults.length }} revue(s) trouvée(s))</h3>
+          
+          <div class="results-grid">
+            @for (revue of searchResults; track revue.id) {
+              <div class="revue-card">
+                <div class="revue-header">
+                  <span class="revue-number">N° {{ revue.num_revue }}</span>
+                  <span class="revue-date">{{ revue.date_sortie }}</span>
+                </div>
+                <h4 class="revue-title">{{ revue.titre_revue }}</h4>
+                <small class="revue-id">ID: {{ revue.id }}</small>
+                <div class="card-actions">
+                  <button 
+                    type="button" 
+                    (click)="editRevue(revue)" 
+                    class="btn-edit"
+                  >
+                    Modifier
+                  </button>
+                  <button class="delete-btn" (click)="deleteRevue(revue.id)">Supprimer</button>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      }
+    </div>
+
+    <!-- Séparateur -->
+    <hr class="section-divider">
+
+    <!-- Section de modification de revue -->
+    @if (isEditing) {
+      <div class="edit-section">
+        <h2> {{ title_window }}</h2>
+
+        <form [formGroup]="editForm" (ngSubmit)="onUpdateSubmit()" class="revue-form">
+          <div class="form-group">
+            <label for="editNumRevue">Numéro de revue :</label>
+            <input 
+              type="number" 
+              id="editNumRevue" 
+              formControlName="numRevue" 
+              class="form-control"
+              [class.error]="editForm.get('numRevue')?.invalid && editForm.get('numRevue')?.touched"
+            />
+            @if (editForm.get('numRevue')?.invalid && editForm.get('numRevue')?.touched) {<div class="error-message">
+              Le numéro de revue est requis et doit être supérieur à 0.
+            </div>}
+          </div>
+
+          <div class="form-group">
+            <label for="editTitre">Titre de la revue :</label>
+            <input 
+              type="text" 
+              id="editTitre" 
+              formControlName="titre" 
+              class="form-control"
+              [class.error]="editForm.get('titre')?.invalid && editForm.get('titre')?.touched"
+            />
+            @if (editForm.get('titre')?.invalid && editForm.get('titre')?.touched) {<div class="error-message">
+              Le titre est requis.
+            </div>}
+          </div>
+
+          <div class="form-group">
+            <label for="editDateSortie">Date de sortie :</label>
+            <input 
+              type="date" 
+              id="editDateSortie" 
+              formControlName="dateSortie" 
+              class="form-control"
+              [class.error]="editForm.get('dateSortie')?.invalid && editForm.get('dateSortie')?.touched"
+            />
+            @if (editForm.get('dateSortie')?.invalid && editForm.get('dateSortie')?.touched) {<div  class="error-message">
+              La date de sortie est requise.
+            </div> }
+          </div>
+        
+
+          <div class="button-group">
+
+
+            @if (selectedRevueId === '') {
+            <button 
+              type="submit" 
+              [disabled]="editForm.invalid || isUpdating"
+              class="btn-submit"
+            >
+              @if (isUpdating) {<span class="spinner"></span>}
+              {{ isUpdating ? 'Ajout...' : 'Ajouter' }}
+            </button>
+            } @else {
+              <button 
+              type="submit" 
+              [disabled]="editForm.invalid || isUpdating"
+              class="btn-submit"
+            >
+              @if (isUpdating) {<span class="spinner"></span>}
+              {{ isUpdating ? 'Mise à jour...' : 'Mettre à jour' }}
+            </button>
+            }
+
+            <button 
+              type="button" 
+              (click)="cancelEdit()" 
+              class="btn-cancel"
+              [disabled]="isUpdating"
+            >
+              Annuler
+            </button>
+          </div>
+        </form>
+        <!-- Messages de succès/erreur pour la modification -->
+        @if (updateSuccess) {
+          <div class="success-message">
+            La revue a été modifiée avec succès !
+          </div>
+        }
+
+        @if (updateError) {
+          <div class="alert alert-error">
+            {{ updateError }}
+          </div>
+        }
+      </div>
+    }
+  
+    <!-- Séparateur -->
+    <hr class="section-divider">
+
+  

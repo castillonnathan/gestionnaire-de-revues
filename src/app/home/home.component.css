@@ -1,113 +1,63 @@
-/* Container principal pour la page */
-.button-container {
-  position: relative;
-  width: 100vw;
-  height: 100vh;
+body {
   margin: 0;
-  padding: 80px 0 0 0; /* Espace pour le titre en haut */
-  box-sizing: border-box;
+  background: radial-gradient(circle at center, #0f2027, #203a43, #2c5364);
+  font-family: 'Outfit', sans-serif;
+  color: #fff;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
-/* Style de base pour tous les boutons */
-.btn {
-  position: absolute;
-  padding: 12px 24px;
-  font-size: 16px;
-  border: 2px solid #007bff;
-  background-color: #007bff;
-  color: white;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  min-width: 120px;
+h1 {
   text-align: center;
+  font-size: 3rem;
+  margin-top: 60px;
+  margin-bottom: 40px;
+  text-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+}
+
+.button-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  align-items: center;
+  justify-content: center;
+  flex-grow: 1;
+}
+
+.btn {
+  padding: 16px 32px;
+  font-size: 18px;
+  border: none;
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  border-radius: 14px;
+  cursor: pointer;
+  min-width: 220px;
+  text-align: center;
+  backdrop-filter: blur(6px);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.3);
+  transition: all 0.35s ease;
+  letter-spacing: 0.5px;
 }
 
 .btn:hover {
-  background-color: #0056b3;
-  border-color: #0056b3;
+  background: rgba(255, 255, 255, 0.18);
+  transform: scale(1.07);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6);
 }
 
-/* Bouton à gauche (centré verticalement dans la zone disponible) */
-.btn-left {
-  left: 25%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-}
-
-.btn-left:hover {
-  transform: translate(-50%, -50%) scale(1.05);
-}
-
-/* Bouton à droite (centré verticalement dans la zone disponible) */
-.btn-right {
-  right: 25%;
-  top: 50%;
-  transform: translate(50%, -50%);
-}
-
-.btn-right:hover {
-  transform: translate(50%, -50%) scale(1.05);
-}
-
-/* Bouton en haut (plus proche du centre) */
-.btn-top {
-  top: 35%;
-  left: 50%;
-  transform: translateX(-50%);
-}
-
-.btn-top:hover {
-  transform: translateX(-50%) scale(1.05);
-}
-
-/* Bouton au milieu (légèrement décalé vers le bas) */
-.btn-center {
-  top: 65%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-}
-
-.btn-center:hover {
-  transform: translate(-50%, -50%) scale(1.05);
-}
-
-/* Responsive pour les petits écrans */
 @media (max-width: 768px) {
-  .button-container {
-    padding-top: 60px;
-  }
-  
   .btn {
-    padding: 10px 20px;
-    font-size: 14px;
-    min-width: 100px;
+    padding: 14px 26px;
+    font-size: 16px;
+    min-width: 180px;
   }
-  
-  .btn-left {
-    left: 20%;
-  }
-  
-  .btn-right {
-    right: 20%;
-  }
-  
-  .btn-top {
-    top: 30%;
-  }
-  
-  .btn-center {
-    top: 70%;
-  }
-}
 
-
-h1 {
-    color: white;
-    text-align: center;
-    font-family: Arial, sans-serif;
-    font-size: 2.5em;
-    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-    margin: 0;
-    padding: 50px 20px;
+  h1 {
+    font-size: 2.4rem;
+    margin-top: 40px;
+    margin-bottom: 30px;
+  }
 }

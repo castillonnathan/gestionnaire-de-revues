@@ -133,14 +133,14 @@ export class ArticleComponent {
     }
   }
 
-  async searchAllArticles() { // Méthode pour rechercher tous les articles, triés par titre croissant
+  async searchAllArticle() { // Méthode pour rechercher tous les articles, triés par titre croissant
     this.isSearching = true; // Indiquer que la recherche est en cours
     this.searchError = null; // Réinitialiser l'erreur de recherche
     this.searchResults = []; // Réinitialiser les résultats de recherche
 
     try {
-      const articlesCollection = collection(this.firestore, 'article'); // Référence à la collection 'article'
-      const q = query(articlesCollection, orderBy('titre_article', 'asc')); // Requête pour récupérer tous les articles, triés par titre croissant
+      const articleCollection = collection(this.firestore, 'article'); // Référence à la collection 'article'
+      const q = query(articleCollection, orderBy('titre_article', 'asc')); // Requête pour récupérer tous les articles, triés par titre croissant
 
       const querySnapshot = await getDocs(q); // Exécution de la requête pour obtenir les documents
       this.searchResults = []; // Réinitialisation du tableau de résultats de recherche
@@ -195,14 +195,14 @@ export class ArticleComponent {
           desc_article: formValue.desc_article ? formValue.desc_article.trim() : '' // le trim() est utilisé pour enlever les espaces superflus
         };
 
-        const articlesCollection = collection(this.firestore, 'article'); // Référence à la collection 'article'
-        await addDoc(articlesCollection, articleData); // Ajout de l'article à Firestore
+        const articleCollection = collection(this.firestore, 'article'); // Référence à la collection 'article'
+        await addDoc(articleCollection, articleData); // Ajout de l'article à Firestore
 
         this.submitSuccess = true; // Indiquer que la soumission a réussi
         this.editForm.reset(); // Réinitialiser le formulaire après soumission réussie
 
         if (this.searchResults.length > 0) { // Si des résultats de recherche sont affichés, les mettre à jour
-          await this.searchAllArticles(); // Recharger les articles
+          await this.searchAllArticle(); // Recharger les articles
         }
 
       } catch (error) {
@@ -262,7 +262,7 @@ export class ArticleComponent {
 
         // Mettre à jour la liste après suppression
         if (this.searchResults.length > 0) {
-          await this.searchAllArticles();
+          await this.searchAllArticle();
         }
 
         alert('Article supprimé avec succès.');
@@ -313,7 +313,7 @@ export class ArticleComponent {
         this.updateSuccess = true; // Indiquer que la mise à jour a réussi
         this.isEditing = false; // Réinitialiser l'état d'édition
         this.editForm.reset(); // Réinitialiser le formulaire d'édition
-        await this.searchAllArticles(); // Recharger les articles après la mise à jour réussie
+        await this.searchAllArticle(); // Recharger les articles après la mise à jour réussie
 
       } catch (error) { // Gestion des erreurs lors de la mise à jour
         console.error('Erreur lors de la mise à jour:', error); // Affichage de l'erreur dans la console

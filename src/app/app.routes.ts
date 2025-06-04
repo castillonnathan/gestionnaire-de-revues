@@ -11,7 +11,7 @@ export const routes:
     component: RecherchesComponent
 }, {
     path: '',
-    redirectTo: 'home',
+    component: HomeComponent,
     pathMatch: 'full'
 }, {
     path: 'home',

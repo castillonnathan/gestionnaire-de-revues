@@ -5,7 +5,8 @@ import { RevueComponent } from './revue/revue.component';
 import { ArticleComponent } from './article/article.component';
 import { AProposComponent } from './a-propos/a-propos.component';
 
-export const routes: Routes = [{
+export const routes: 
+    Routes = [{
     path: 'recherches',
     component: RecherchesComponent
 }, {

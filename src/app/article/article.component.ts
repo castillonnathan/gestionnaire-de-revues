@@ -1,6 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
-import { Firestore, collection, addDoc, query, where, getDocs, orderBy, doc, updateDoc, deleteDoc } from '@angular/fire/firestore';
+import { Firestore, collection, addDoc, query, where, getDocs, orderBy, doc, updateDoc, deleteDoc, startAt, endAt } from '@angular/fire/firestore';
 import { CommonModule } from '@angular/common';
 
 @Component({
@@ -17,7 +17,6 @@ export class ArticleComponent {
   title_window = ''; // Titre de la fenêtre, utilisé pour afficher le titre de l'article
 
   searchForm: FormGroup; // Formulaire de recherche pour filtrer les articles
-  articleForm: FormGroup; // Formulaire pour créer ou mettre à jour un article
   editForm: FormGroup; // Formulaire pour éditer un article existant
 
   isSubmitting = false; // Indicateur pour savoir si le formulaire d'article est en cours de soumission
@@ -32,6 +31,7 @@ export class ArticleComponent {
   updateSuccess = false; // Indicateur pour savoir si la mise à jour d'un article a réussi
   updateError: string | null = null; // Message d'erreur à afficher en cas de problème lors de la mise à jour d'un article
   selectedArticleId: string | null = null; // ID de l'article sélectionné pour l'édition ou la mise à jour
+  showForm = false; // Indicateur pour afficher/cacher le formulaire d'ajout/édition
 
   constructor() { // Constructeur pour initialiser les formulaires
     this.searchForm = this.fb.group({ // Initialisation du formulaire de recherche d'articles
@@ -44,94 +44,76 @@ export class ArticleComponent {
       titre_article: ['', [Validators.required]], // Champ pour le titre de l'article, requis
       num_page: ['', [Validators.required]], // Champ pour le numéro de la page, requis
       desc_article: ['', [Validators.required]], // Champ pour le contenu de l'article, requis
-    });
+      // Ajouter l'id de revue mais faire attention car l'id n'est pas pareil que le nom d'une revue ou même que son numéro
+      // id_revue: ['', [Validators.required]] // Champ pour l'ID de la revue, requis (commenté pour l'instant)
 
-    this.articleForm = this.fb.group({ // Initialisation du formulaire de création ou de mise à jour d'article
-      titre_article: ['', [Validators.required]], // Champ pour le titre de l'article, requis
-      num_article: ['', [Validators.required]], // Champ pour le numéro de l'article, requis
-      num_page: ['', [Validators.required]], // Champ pour le numéro de la page, requis
-      desc_article: ['', [Validators.required]], // Champ pour le contenu de l'article, requis
+
+      //Ajouter fonction pour associer id et numéro de revue, faire en sorte que les deux soit liés mais quand je sélectionne un ID c'est le numéro de revue qui s'affiche
+
     });
 
   }
   
-  async searchArticle() { // Méthode pour rechercher des articles en fonction des critères spécifiés dans le formulaire de recherche
-    if (this.searchForm.valid) { // Vérifiez que le formulaire de recherche est valide avant de procéder à la recherche
-      this.isSearching = true; // Indiquer que la recherche est en cours
-      this.searchError = null; // Réinitialiser l'erreur de recherche
-      this.searchResults = []; // Réinitialiser les résultats de recherche
+  async searchArticle() {
+  if (this.searchForm.valid) {
+    this.isSearching = true;
+    this.searchError = null;
+    this.searchResults = [];
 
-      try {
-        const searchTerm = this.searchForm.value.searchTerm.trim(); //  Récupération du terme de recherche et suppression des espaces superflus
-        const searchType = this.searchForm.value.searchType; // Récupération du type de recherche sélectionné (titre, numéro, page)
+    try {
+      const searchTerm = this.searchForm.value.searchTerm.trim();
+      const searchType = this.searchForm.value.searchType;
 
-        const articleCollection = collection(this.firestore, 'article'); // Référence à la collection 'articles' dans Firestore
-        let q; // Déclaration de la variable de requête
+      const articleCollection = collection(this.firestore, 'article');
+      let q;
 
-        switch (searchType) { // Déterminer le type de recherche et construire la requête en conséquence
-          case 'titre': // Recherche par titre
-            q = query( // articlesCollection, where('titre_article', '==', searchTerm)); // Requête pour trouver les articles avec le titre correspondant
-              articleCollection, // Création de la requête pour rechercher par titre
-              where('titre_article', '>=', searchTerm),
-              where('titre_article', '<=', searchTerm + '\uf8ff'), // Utilisation de '\uf8ff' pour inclure tous les titres qui commencent par le terme de recherche
-              orderBy('titre_article') // Tri des résultats par titre
-            );
-            break; // Recherche par numéro d'article
+      // Pour les recherches exactes (num_article et num_page)
+      console.log(searchType);
+      if (searchType === 'num_article' || searchType === 'num_page') {
+        q = query(
+          articleCollection,
+          where(searchType, '==', searchType === 'num_page' ? Number(searchTerm) : searchTerm)
+        );
 
-          case 'num_article':
-            q = query( // articlesCollection, where('num_article', '==', searchTerm)); // Requête pour trouver les articles avec le numéro correspondant
-              articleCollection, // Création de la requête pour rechercher par numéro d'article
-              where('num_article', '>=', searchTerm),
-              where('num_article', '<=', searchTerm + '\uf8ff'), // Utilisation de '\uf8ff' pour inclure tous les numéros qui commencent par le terme de recherche
-              orderBy('num_article') // Tri des résultats par numéro d'article
-            );
-            break; // Recherche par numéro de page
+      // Pour description et titre -> on récupère tout et filtre côté client
+      } else if (searchType === 'titre_article' || searchType === 'desc_article') {
+        q = query(articleCollection, orderBy(searchType));
 
-          case 'num_page':
-            q = query( // articlesCollection, where('num_page', '==', searchTerm)); // Requête pour trouver les articles avec le numéro de page correspondant
-              articleCollection, // Création de la requête pour rechercher par numéro de page
-              where('num_page', '>=', searchTerm),
-              where('num_page', '<=', searchTerm + '\uf8ff'), // Utilisation de '\uf8ff' pour inclure tous les numéros de page qui commencent par le terme de recherche
-              orderBy('num_page') // Tri des résultats par numéro de page
-            );
-            break;
-
-          case 'desc_article':
-            q = query( // articlesCollection, where('desc_article', '==', searchTerm)); // Requête pour trouver les articles avec la description correspondante
-              articleCollection,
-              where('desc_article', '>=', searchTerm),
-              where('desc_article', '<=', searchTerm + '\uf8ff'), // Utilisation de '\uf8ff' pour inclure toutes les descriptions qui commencent par le terme de recherche
-              orderBy('desc_article') // Tri des résultats par description
-            );
-            break;
-
-          default:
-            q = query(articleCollection, orderBy('titre_article'));
-            break;
-        }
-
-        const querySnapshot = await getDocs(q); // Exécution de la requête pour obtenir les documents
-        this.searchResults = []; // Réinitialisation du tableau de résultats de recherche
-
-        querySnapshot.forEach((doc) => { // Parcours de chaque document trouvé dans la collection
-          this.searchResults.push({ // Ajout des données du document dans le tableau de résultats
-            id: doc.id, // ID du document
-            ...doc.data() // Données du document
-          });
-        });
-
-        if (this.searchResults.length === 0) { // Si aucun résultat n'est trouvé, afficher un message d'erreur
-          this.searchError = 'Aucun résultat trouvé avec ces critères'; // Message d'erreur à afficher à l'utilisateur
-        }
-
-      } catch (error) { // Gestion des erreurs lors de la recherche
-        console.error('Erreur lors de la recherche:', error); // Affichage de l'erreur dans la console
-        this.searchError = 'Une erreur est survenue lors de la recherche: ' + (error as Error).message; // Message d'erreur à afficher à l'utilisateur
-      } finally { // Bloc finally pour s'assurer que l'état de recherche est réinitialisé
-        this.isSearching = false; // Réinitialisation de l'état de recherche
+      } else {
+        // fallback : récupérer tout par défaut
+        q = query(articleCollection, orderBy('titre_article'));
       }
+
+      const querySnapshot = await getDocs(q);
+      const tempResults: any[] = [];
+
+      querySnapshot.forEach((doc) => {
+        const data = { id: doc.id, ...doc.data() };
+        tempResults.push(data);
+      });
+
+      // Si besoin : filtrage JS côté client (insensible à la casse)
+      if (searchType === 'titre_article' || searchType === 'desc_article') {
+        this.searchResults = tempResults.filter((article) =>
+          article[searchType].toLowerCase().includes(searchTerm.toLowerCase())
+        );
+      } else {
+        this.searchResults = tempResults;
+      }
+
+      if (this.searchResults.length === 0) {
+        this.searchError = 'Aucun résultat trouvé avec ces critères';
+      }
+
+    } catch (error) {
+      console.error('Erreur lors de la recherche:', error);
+      this.searchError = 'Une erreur est survenue lors de la recherche: ' + (error as Error).message;
+    } finally {
+      this.isSearching = false;
     }
   }
+}
+
 
   async searchAllArticle() { // Méthode pour rechercher tous les articles, triés par titre croissant
     this.isSearching = true; // Indiquer que la recherche est en cours
@@ -179,6 +161,23 @@ export class ArticleComponent {
     }
   }
 
+  showAddForm() { // Nouvelle méthode pour afficher le formulaire d'ajout
+    this.title_window = 'Ajouter un article';
+    this.showForm = true;
+    this.isEditing = false;
+    this.selectedArticleId = null;
+    this.submitSuccess = false;
+    this.submitError = null;
+    this.updateSuccess = false;
+    this.updateError = null;
+    
+    this.editForm.reset(); // Réinitialiser le formulaire
+
+    setTimeout(() => {
+      document.querySelector('.edit-section')?.scrollIntoView({ behavior: 'smooth' });
+    }, 100);
+  }
+
   async onAdd() { // Méthode pour soumettre le formulaire d'article
     if (this.editForm.valid) { // Vérifiez que le formulaire est valide avant de soumettre
       this.isSubmitting = true; // Indiquer que la soumission est en cours
@@ -218,6 +217,7 @@ export class ArticleComponent {
 
   editArticle(article: any) { // Méthode pour initier l'édition d'un article
     this.title_window = 'Édition de l\'article'; // Mettre à jour le titre de la fenêtre pour l'édition
+    this.showForm = true; // Afficher le formulaire
     this.isEditing = true; // Indiquer que l'on est en mode édition
     this.selectedArticleId = article.id; // Stocker l'ID de l'article sélectionné
     this.updateSuccess = false; // Réinitialiser le succès de la mise à jour
@@ -235,8 +235,9 @@ export class ArticleComponent {
     }, 100); // 100 millisecondes
   }
 
-  addArticle() { // Méthode pour initier l'ajout d'un article
+  addArticle(article: any) { // Méthode pour initier l'ajout d'un article
     this.title_window = 'Ajout d\'un article'; // Mettre à jour le titre de la fenêtre pour l'ajout
+    this.showForm = true; // Afficher le formulaire
     this.isEditing = true; // Indiquer que l'on est en mode édition
     this.selectedArticleId = ''; // Stocker l'ID de l'article sélectionné
     this.updateSuccess = false; // Réinitialiser le succès de la mise à jour
@@ -275,6 +276,7 @@ export class ArticleComponent {
   }
 
   cancelEdit() {
+    this.showForm = false; // Cacher le formulaire
     this.isEditing = false; // Réinitialiser l'état d'édition
     this.selectedArticleId = null; // Réinitialiser l'ID de l'article sélectionné
     this.editForm.reset(); // Réinitialiser le formulaire d'édition
@@ -311,6 +313,7 @@ export class ArticleComponent {
         await updateDoc(docRef, articleData); // Mise à jour du document dans Firestore
 
         this.updateSuccess = true; // Indiquer que la mise à jour a réussi
+        this.showForm = false; // Cacher le formulaire après mise à jour
         this.isEditing = false; // Réinitialiser l'état d'édition
         this.editForm.reset(); // Réinitialiser le formulaire d'édition
         await this.searchAllArticle(); // Recharger les articles après la mise à jour réussie

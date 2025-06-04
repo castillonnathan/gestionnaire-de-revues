@@ -3,12 +3,6 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } 
 import { Firestore, collection, addDoc, query, where, getDocs, orderBy, doc, updateDoc, deleteDoc } from '@angular/fire/firestore';
 import { CommonModule } from '@angular/common';
 
-/*interface revue {
-  num_revue: number;
-  date_sortie: Date;
-  titre_revue: string;
-}*/
-
 @Component({
   selector: 'app-revue',
   standalone: true,

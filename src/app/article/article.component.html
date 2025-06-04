@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -17,10 +18,13 @@
             <form [formGroup]="searchForm">
                 <div class="search-controls">
                     <select formControlName="searchType" class="search-select">
-                        <option value="titre_article">Titre</option>
+                        <option value="titre_article">Titre de l'article</option>
                         <option value="num_article">Numéro d'article</option>
                         <option value="num_page">Numéro de page</option>
                         <option value="desc_article">Description</option>
+                        <option value="categorie">Catégorie</option>
+                        <option value="localisation">Localisation</option>
+                        <option value="revue">Revue</option>
                     </select>
                 </div>
                 <div class="search-bar">
@@ -52,69 +56,127 @@
             }
         </div>
 
-        <!-- Section d'ajout/édition -->
-        <div class="form-section">
-            <h2 class="form-title">{{ title_window || 'Ajouter un article' }}</h2>
-
-            <!-- Formulaire d'ajout/édition -->
-            <div class="edit-section">
-                <form [formGroup]="editForm" (ngSubmit)="selectedArticleId ? onUpdateSubmit() : onAdd()">
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label class="form-label" for="editArticleNumber">Numéro d'article *</label>
-                            <input type="text" id="editArticleNumber" class="form-input" 
-                                   formControlName="num_article" required placeholder="Ex: ART001">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label" for="editArticleTitle">Titre de l'article *</label>
-                            <input type="text" id="editArticleTitle" class="form-input" 
-                                   formControlName="titre_article" required placeholder="Titre de l'article">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label" for="editPageNumber">Numéro de page</label>
-                            <input type="number" id="editPageNumber" class="form-input" 
-                                   formControlName="num_page" placeholder="Ex: 42">
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label" for="editArticleContent">Contenu de l'article</label>
-                        <textarea id="editArticleContent" class="form-input form-textarea" 
-                                  formControlName="desc_article" placeholder="Contenu détaillé de l'article..."></textarea>
-                    </div>
-
-                    <!-- Messages de succès/erreur -->
-                    @if (submitSuccess) {
-                        <div class="success-message">
-                            Article ajouté avec succès !
-                        </div>
-                    }
-                    @if (updateSuccess) {
-                        <div class="success-message">
-                            Article mis à jour avec succès !
-                        </div>
-                    }
-                    @if (submitError) {
-                        <div class="error-message">
-                            {{ submitError }}
-                        </div>
-                    }
-                    @if (updateError) {
-                        <div class="error-message">
-                            {{ updateError }}
-                        </div>
-                    }
-                    <div class="form-actions">
-                        <button type="submit" class="form-btn" 
-                                [disabled]="isSubmitting || isUpdating">
-                            {{ selectedArticleId ? (isUpdating ? 'Mise à jour...' : 'Mettre à jour') : (isSubmitting ? 'Ajout...' : 'Ajouter l\'article') }}
-                        </button>
-                        <button type="button" class="cancel-btn" (click)="cancelEdit()">
-                            Annuler
-                        </button>
-                    </div>
-                </form>
+        <!-- Bouton pour afficher le formulaire d'ajout -->
+        @if (!showForm) {
+            <div class="add-button-section">
+                <button type="button" class="add-article-btn" (click)="showAddForm()">
+                    Ajouter un article
+                </button>
             </div>
-        </div>
+        }
+
+        <!-- Section d'ajout/édition -->
+        @if (showForm) {
+            <div class="form-section">
+                <h2 class="form-title">{{ title_window || 'Ajouter un article' }}</h2>
+
+                <!-- Formulaire d'ajout/édition -->
+                <div class="edit-section">
+                    <form [formGroup]="editForm" (ngSubmit)="selectedArticleId ? onUpdateSubmit() : onAdd()">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label class="form-label" for="editArticleNumber">Numéro d'article *</label>
+                                <input type="text" id="editArticleNumber" class="form-input" 
+                                       formControlName="num_article" required placeholder="Ex: ART001">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="editArticleTitle">Titre de l'article *</label>
+                                <input type="text" id="editArticleTitle" class="form-input" 
+                                       formControlName="titre_article" required placeholder="Titre de l'article">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="editPageNumber">Numéro de page</label>
+                                <input type="number" id="editPageNumber" class="form-input" 
+                                       formControlName="num_page" placeholder="Ex: 42">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="editCategorie">Catégorie</label>
+                                <select id="editCategorie" class="form-select" formControlName="categorie">
+                                    <option value="">Sélectionnez une catégorie</option>
+                                    <option value="technologie">Technologie</option>
+                                    <option value="science">Science</option>
+                                    <option value="culture">Culture</option>
+                                    <option value="sport">Sport</option>
+                                    <option value="economie">Économie</option>
+                                    <option value="politique">Politique</option>
+                                    <option value="sante">Santé</option>
+                                    <option value="environnement">Environnement</option>
+                                    <option value="education">Éducation</option>
+                                    <option value="divertissement">Divertissement</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="editLocalisation">Localisation</label>
+                                <select id="editLocalisation" class="form-select" formControlName="localisation">
+                                    <option value="">Sélectionnez une localisation</option>
+                                    <option value="france">Placard</option>
+                                    <option value="europe">Étagère</option>
+                                    <option value="amerique-nord">Sous-sol</option>
+                                    <option value="amerique-sud">Grenier</option>
+                                    <option value="asie">Carton</option>
+                                    <option value="afrique">Caisse plastique</option>
+                                    <option value="oceanie">Sac de course</option>>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="editRevue">Revue</label>
+                                <select id="editRevue" class="form-select" formControlName="revue">
+                                    <option value="">Sélectionnez une revue</option>
+                                    <option value="science-vie">Science & Vie</option>
+                                    <option value="recherche">La Recherche</option>
+                                    <option value="figaro">Le Figaro</option>
+                                    <option value="monde">Le Monde</option>
+                                    <option value="liberation">Libération</option>
+                                    <option value="express">L'Express</option>
+                                    <option value="nouvel-obs">Le Nouvel Observateur</option>
+                                    <option value="point">Le Point</option>
+                                    <option value="marianne">Marianne</option>
+                                    <option value="usine-nouvelle">L'Usine Nouvelle</option>
+                                    <option value="challenges">Challenges</option>
+                                    <option value="alternatives-economiques">Alternatives Économiques</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="editArticleContent">Contenu de l'article</label>
+                            <textarea id="editArticleContent" class="form-input form-textarea" 
+                                      formControlName="desc_article" placeholder="Contenu détaillé de l'article..."></textarea>
+                        </div>
+
+                        <!-- Messages de succès/erreur -->
+                        @if (submitSuccess) {
+                            <div class="success-message">
+                                Article ajouté avec succès !
+                            </div>
+                        }
+                        @if (updateSuccess) {
+                            <div class="success-message">
+                                Article mis à jour avec succès !
+                            </div>
+                        }
+                        @if (submitError) {
+                            <div class="error-message">
+                                {{ submitError }}
+                            </div>
+                        }
+                        @if (updateError) {
+                            <div class="error-message">
+                                {{ updateError }}
+                            </div>
+                        }
+                        <div class="form-actions">
+                            <button type="submit" class="form-btn" 
+                                    [disabled]="isSubmitting || isUpdating">
+                                {{ selectedArticleId ? (isUpdating ? 'Mise à jour...' : 'Mettre à jour') : (isSubmitting ? 'Ajout...' : 'Ajouter l\'article') }}
+                            </button>
+                            <button type="button" class="cancel-btn" (click)="cancelEdit()">
+                                Annuler
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        }
 
         <!-- Section des articles -->
         <div class="articles-section">
@@ -137,6 +199,17 @@
                             @if (article.num_page) {
                                 <div class="article-page">Page {{ article.num_page }}</div>
                             }
+                            <div class="article-meta">
+                                @if (article.categorie) {
+                                    <span>📂 {{ article.categorie }}</span>
+                                }
+                                @if (article.localisation) {
+                                    <span>📍 {{ article.localisation }}</span>
+                                }
+                                @if (article.revue) {
+                                    <span>📖 {{ article.revue }}</span>
+                                }
+                            </div>
                             <div class="article-content">{{ article.desc_article }}</div>
                             <div class="article-actions">
                                 <button (click)="editArticle(article)" class="edit-btn">Éditer</button>

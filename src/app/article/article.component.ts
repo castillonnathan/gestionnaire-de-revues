@@ -46,7 +46,7 @@ export class ArticleComponent {
       desc_article: ['', [Validators.required]], // Champ pour le contenu de l'article, requis
       //categorie_article: ['', [Validators.required]], // Champ pour la catégorie de l'article, requis (commenté pour l'instant)
       //localisation_article: ['', [Validators.required]], // Champ pour la localisation de l'article, requis
-      //article_revue : ['', [Validators.required]], // Champ pour l'article de la revue, requis (commenté pour l'instant)
+      //article_revue : ['', [Validators.required]], // Champ pour l'article de la revue, requis
 
 
       // Ajouter l'id de revue mais faire attention car l'id n'est pas pareil que le nom d'une revue ou même que son numéro

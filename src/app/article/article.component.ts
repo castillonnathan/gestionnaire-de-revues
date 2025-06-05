@@ -33,23 +33,18 @@ export class ArticleComponent implements OnInit {
   selectedArticleId: string | null = null;
   showForm = false;
 
-  readonly CATEGORIES_PREDEFINES = [
-    { libelle: 'Technologie'},
-    { libelle: 'Sport'},
-    { libelle: 'Culture'},
-    { libelle: 'Santé'},
-    { libelle: 'Économie'},
-    { libelle: 'Politique'},
-    { libelle: 'Sciences'},
-    { libelle: 'Éducation'},
-    { libelle: 'Environnement'},
-    { libelle: 'Arts'},
-    { libelle: 'Automobile'},
-    { libelle: 'Immobilier'},
-    { libelle: 'Voyage'},
-    { libelle: 'Cuisine'},
-    { libelle: 'Mode'}
-  ];
+  // readonly CATEGORIES_PREDEFINES = [
+  //  { libelle: 'Technologie'},
+  //  { libelle: 'Informatique' },
+  //  { libelle: 'Internet'},
+  // { libelle: 'Web'},
+  //  { libelle: 'Télécommunications'},
+  //  { libelle: 'Réseaux sociaux'},
+  //  { libelle: 'Sécurité informatique'},
+  //  { libelle: 'Développement logiciel'},
+  //  { libelle: 'Intelligence artificielle'},
+  //  { libelle: 'Blockchain'},
+  //];
 
   constructor() {
     this.searchForm = this.fb.group({
@@ -65,8 +60,6 @@ export class ArticleComponent implements OnInit {
       libelle_categorie: ['', [Validators.required]]
     });
   }
-
-  async ngOnInit() {}
 
   async getOrCreateCategorie(libelle: string): Promise<string> {
     try {
@@ -106,6 +99,27 @@ export class ArticleComponent implements OnInit {
     } catch (error) {
       console.error('Erreur lors de la création/récupération de la catégorie:', error);
       throw error;
+    }
+  }
+
+  table_categorie: any[] = [];
+
+  async ngOnInit() {
+    await this.loadCategories();
+  }
+
+  async loadCategories() {
+    try {
+      const categorieCollection = collection(this.firestore, 'categorie');
+      const q = query(categorieCollection, orderBy('libelle_categorie', 'asc'));
+      const querySnapshot = await getDocs(q);
+      this.table_categorie = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+    } catch (error) {
+      console.error('Erreur lors du chargement des catégories:', error);
+      this.table_categorie = [];
     }
   }
 
@@ -254,7 +268,6 @@ export class ArticleComponent implements OnInit {
           num_page: formValue.num_page ? Number(formValue.num_page) : null,
           desc_article: formValue.desc_article ? formValue.desc_article.trim() : '',
           categorie_id: categorieId,
-          libelle_categories: formValue.libelle_categorie
         };
 
         const articleCollection = collection(this.firestore, 'article');
@@ -334,41 +347,45 @@ export class ArticleComponent implements OnInit {
   }
 
   async onUpdate() {
-    if (this.editForm.valid && this.selectedArticleId) {
-      this.isUpdating = true;
-      this.updateSuccess = false;
-      this.updateError = null;
+  if (this.editForm.valid && this.selectedArticleId) {
+    this.isUpdating = true;
+    this.updateSuccess = false;
+    this.updateError = null;
 
-      try {
-        const formValue = this.editForm.value;
-        const categorieId = await this.getOrCreateCategorie(formValue.libelle_categorie);
+    try {
+      const formValue = this.editForm.value;
+      // Récupère ou crée la catégorie et obtient son ID
+      const categorieId = await this.getOrCreateCategorie(formValue.libelle_categorie);
 
-        const articleData = {
-          num_article: formValue.num_article.trim(),
-          titre_article: formValue.titre_article.trim(),
-          num_page: formValue.num_page ? Number(formValue.num_page) : null,
-          desc_article: formValue.desc_article ? formValue.desc_article.trim() : '',
-          categorie_id: categorieId,
-          libelle_categories: formValue.libelle_categorie
-        };
+      // Prépare les données de l'article à mettre à jour
+      const articleData = {
+        num_article: formValue.num_article.trim(),
+        titre_article: formValue.titre_article.trim(),
+        num_page: formValue.num_page ? Number(formValue.num_page) : null,
+        desc_article: formValue.desc_article ? formValue.desc_article.trim() : '',
+        categorie_id: categorieId,
+      };
 
-        const docRef = doc(this.firestore, 'article', this.selectedArticleId);
-        await updateDoc(docRef, articleData);
+      // Met à jour l'article dans Firestore
+      const docRef = doc(this.firestore, 'article', this.selectedArticleId);
+      await updateDoc(docRef, articleData);
 
-        this.updateSuccess = true;
-        this.showForm = false;
-        this.isEditing = false;
-        this.editForm.reset();
-        await this.searchAllArticle();
+      // Réinitialise le formulaire et les états
+      this.updateSuccess = true;
+      this.showForm = false;
+      this.isEditing = false;
+      this.editForm.reset();
+      await this.searchAllArticle();
 
-      } catch (error) {
-        console.error('Erreur lors de la mise à jour:', error);
-        this.updateError = 'Une erreur est survenue lors de la mise à jour';
-      } finally {
-        this.isUpdating = false;
-      }
+      //Au cas ou il y a une erreur de recherche
+    } catch (error) {
+      console.error('Erreur lors de la mise à jour:', error);
+      this.updateError = 'Une erreur est survenue lors de la mise à jour';
+    } finally {
+      this.isUpdating = false;
     }
   }
+}
 
   async getArticlesByCategorie(categorieId: string): Promise<any[]> {
     try {

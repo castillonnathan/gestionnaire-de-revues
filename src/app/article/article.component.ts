@@ -1,6 +1,6 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
-import { Firestore, collection, addDoc, query, where, getDocs, orderBy, doc, updateDoc, deleteDoc, startAt, endAt } from '@angular/fire/firestore';
+import { Firestore, collection, addDoc, query, where, getDocs, orderBy, doc, updateDoc, deleteDoc } from '@angular/fire/firestore';
 import { CommonModule } from '@angular/common';
 
 @Component({
@@ -10,163 +10,218 @@ import { CommonModule } from '@angular/common';
   templateUrl: './article.component.html',
   styleUrl: './article.component.css'
 })
-export class ArticleComponent {
+export class ArticleComponent implements OnInit {
 
-  private fb = inject(FormBuilder); // Injection du FormBuilder pour créer des formulaires réactifs
-  private firestore = inject(Firestore); // Injection de Firestore pour interagir avec la base de données Firestore
-  title_window = ''; // Titre de la fenêtre, utilisé pour afficher le titre de l'article
+  private fb = inject(FormBuilder);
+  private firestore = inject(Firestore);
+  title_window = '';
 
-  searchForm: FormGroup; // Formulaire de recherche pour filtrer les articles
-  editForm: FormGroup; // Formulaire pour éditer un article existant
+  searchForm: FormGroup;
+  editForm: FormGroup;
 
-  isSubmitting = false; // Indicateur pour savoir si le formulaire d'article est en cours de soumission
-  submitSuccess = false; // Indicateur pour savoir si la soumission du formulaire d'article a réussi
-  isSearching = false; // Indicateur pour savoir si une recherche est en cours
-  submitError: string | null = null; // Message d'erreur à afficher en cas de problème lors de la soumission du formulaire d'article
-  searchResults: any[] = []; // Tableau pour stocker les résultats de recherche d'articles
-  searchError: string | null = null; // Message d'erreur à afficher en cas de problème lors de la recherche d'articles
+  isSubmitting = false;
+  submitSuccess = false;
+  isSearching = false;
+  submitError: string | null = null;
+  searchResults: any[] = [];
+  searchError: string | null = null;
 
-  isEditing = false; // Indicateur pour savoir si l'on est en mode édition d'un article
-  isUpdating = false; // Indicateur pour savoir si la mise à jour d'un article est en cours
-  updateSuccess = false; // Indicateur pour savoir si la mise à jour d'un article a réussi
-  updateError: string | null = null; // Message d'erreur à afficher en cas de problème lors de la mise à jour d'un article
-  selectedArticleId: string | null = null; // ID de l'article sélectionné pour l'édition ou la mise à jour
-  showForm = false; // Indicateur pour afficher/cacher le formulaire d'ajout/édition
+  isEditing = false;
+  isUpdating = false;
+  updateSuccess = false;
+  updateError: string | null = null;
+  selectedArticleId: string | null = null;
+  showForm = false;
 
-  constructor() { // Constructeur pour initialiser les formulaires
-    this.searchForm = this.fb.group({ // Initialisation du formulaire de recherche d'articles
-      searchTerm: ['', [Validators.required]], // Champ pour le terme de recherche
-      searchType: ['titre', [Validators.required]] // Champ pour le type de recherche, avec une valeur par défaut 'titre' et requis
+  readonly CATEGORIES_PREDEFINES = [
+    { libelle: 'Technologie'},
+    { libelle: 'Sport'},
+    { libelle: 'Culture'},
+    { libelle: 'Santé'},
+    { libelle: 'Économie'},
+    { libelle: 'Politique'},
+    { libelle: 'Sciences'},
+    { libelle: 'Éducation'},
+    { libelle: 'Environnement'},
+    { libelle: 'Arts'},
+    { libelle: 'Automobile'},
+    { libelle: 'Immobilier'},
+    { libelle: 'Voyage'},
+    { libelle: 'Cuisine'},
+    { libelle: 'Mode'}
+  ];
+
+  constructor() {
+    this.searchForm = this.fb.group({
+      searchTerm: ['', [Validators.required]],
+      searchType: ['titre_article', [Validators.required]]
     });
 
-    this.editForm = this.fb.group({ // Initialisation du formulaire d'édition d'article
-      num_article: ['', [Validators.required]], // Champ pour le numéro de l'article, requis
-      titre_article: ['', [Validators.required]], // Champ pour le titre de l'article, requis
-      num_page: ['', [Validators.required]], // Champ pour le numéro de la page, requis
-      desc_article: ['', [Validators.required]], // Champ pour le contenu de l'article, requis
-      //categorie_article: ['', [Validators.required]], // Champ pour la catégorie de l'article, requis (commenté pour l'instant)
-      //localisation_article: ['', [Validators.required]], // Champ pour la localisation de l'article, requis
-      //article_revue : ['', [Validators.required]], // Champ pour l'article de la revue, requis
-
-
-      // Ajouter l'id de revue mais faire attention car l'id n'est pas pareil que le nom d'une revue ou même que son numéro
-      // id_revue: ['', [Validators.required]] // Champ pour l'ID de la revue, requis (commenté pour l'instant)
-
-
-      //Ajouter fonction pour associer id et numéro de revue, faire en sorte que les deux soit liés mais quand je sélectionne un ID c'est le numéro de revue qui s'affiche
-
+    this.editForm = this.fb.group({
+      num_article: ['', [Validators.required]],
+      titre_article: ['', [Validators.required]],
+      num_page: [''],
+      desc_article: [''],
+      libelle_categorie: ['', [Validators.required]]
     });
-
   }
-  
+
+  async ngOnInit() {}
+
+  async getOrCreateCategorie(libelle: string): Promise<string> {
+    try {
+      const categorieCollection = collection(this.firestore, 'categorie');
+      const q = query(
+        categorieCollection,
+        where('libelle_categorie', '==', libelle)
+      );
+
+      const querySnapshot = await getDocs(q);
+
+      if (!querySnapshot.empty) {
+        const categorieDoc = querySnapshot.docs[0];
+        const categorieId = categorieDoc.id;
+
+        const categorieData = categorieDoc.data();
+        if (!categorieData['id']) {
+          await updateDoc(doc(this.firestore, 'categorie', categorieId), {
+            id: categorieId
+          });
+        }
+
+        return categorieId;
+      } else {
+        const nouvelleCategorieData = {
+          libelle_categorie: libelle
+        };
+
+        const docRef = await addDoc(categorieCollection, nouvelleCategorieData);
+
+        await updateDoc(docRef, {
+          id: docRef.id
+        });
+
+        return docRef.id;
+      }
+    } catch (error) {
+      console.error('Erreur lors de la création/récupération de la catégorie:', error);
+      throw error;
+    }
+  }
+
   async searchArticle() {
-  if (this.searchForm.valid) {
+    if (this.searchForm.valid) {
+      this.isSearching = true;
+      this.searchError = null;
+      this.searchResults = [];
+
+      try {
+        const searchTerm = this.searchForm.value.searchTerm.trim();
+        const searchType = this.searchForm.value.searchType;
+
+        const articleCollection = collection(this.firestore, 'article');
+        let q;
+
+        if (searchType === 'num_article' || searchType === 'num_page') {
+          q = query(
+            articleCollection,
+            where(searchType, '==', searchType === 'num_page' ? Number(searchTerm) : searchTerm)
+          );
+        } else if (searchType === 'categorie') {
+          q = query(
+            articleCollection,
+            where('libelle_categories', '>=', searchTerm.toLowerCase()),
+            where('libelle_categories', '<=', searchTerm.toLowerCase() + '\uf8ff')
+          );
+        } else if (searchType === 'titre_article' || searchType === 'desc_article') {
+          q = query(articleCollection, orderBy(searchType));
+        } else {
+          q = query(articleCollection, orderBy('titre_article'));
+        }
+
+        const querySnapshot = await getDocs(q);
+        const tempResults: any[] = [];
+
+        querySnapshot.forEach((doc) => {
+          const data = { id: doc.id, ...doc.data() };
+          tempResults.push(data);
+        });
+
+        if (searchType === 'titre_article' || searchType === 'desc_article') {
+          this.searchResults = tempResults.filter((article) =>
+            article[searchType] && article[searchType].toLowerCase().includes(searchTerm.toLowerCase())
+          );
+        } else if (searchType === 'categorie') {
+          this.searchResults = tempResults.filter((article) =>
+            article.libelle_categories && article.libelle_categories.toLowerCase().includes(searchTerm.toLowerCase())
+          );
+        } else {
+          this.searchResults = tempResults;
+        }
+
+        if (this.searchResults.length === 0) {
+          this.searchError = 'Aucun résultat trouvé avec ces critères';
+        }
+
+      } catch (error) {
+        console.error('Erreur lors de la recherche:', error);
+        this.searchError = 'Une erreur est survenue lors de la recherche: ' + (error as Error).message;
+      } finally {
+        this.isSearching = false;
+      }
+    }
+  }
+
+  async searchAllArticle() {
     this.isSearching = true;
     this.searchError = null;
     this.searchResults = [];
 
     try {
-      const searchTerm = this.searchForm.value.searchTerm.trim();
-      const searchType = this.searchForm.value.searchType;
-
       const articleCollection = collection(this.firestore, 'article');
-      let q;
-
-      // Pour les recherches exactes (num_article et num_page)
-      console.log(searchType);
-      if (searchType === 'num_article' || searchType === 'num_page') {
-        q = query(
-          articleCollection,
-          where(searchType, '==', searchType === 'num_page' ? Number(searchTerm) : searchTerm)
-        );
-
-      // Pour description et titre -> on récupère tout et filtre côté client
-      } else if (searchType === 'titre_article' || searchType === 'desc_article') {
-        q = query(articleCollection, orderBy(searchType));
-
-      } else {
-        // fallback : récupérer tout par défaut
-        q = query(articleCollection, orderBy('titre_article'));
-      }
+      const q = query(articleCollection, orderBy('titre_article', 'asc'));
 
       const querySnapshot = await getDocs(q);
-      const tempResults: any[] = [];
+      this.searchResults = [];
 
       querySnapshot.forEach((doc) => {
-        const data = { id: doc.id, ...doc.data() };
-        tempResults.push(data);
+        this.searchResults.push({
+          id: doc.id,
+          ...doc.data()
+        });
       });
-
-      // Si besoin : filtrage JS côté client (insensible à la casse)
-      if (searchType === 'titre_article' || searchType === 'desc_article') {
-        this.searchResults = tempResults.filter((article) =>
-          article[searchType].toLowerCase().includes(searchTerm.toLowerCase())
-        );
-      } else {
-        this.searchResults = tempResults;
-      }
-
-      if (this.searchResults.length === 0) {
-        this.searchError = 'Aucun résultat trouvé avec ces critères';
-      }
-
     } catch (error) {
-      console.error('Erreur lors de la recherche:', error);
-      this.searchError = 'Une erreur est survenue lors de la recherche: ' + (error as Error).message;
+      console.error('Erreur lors du chargement des articles:', error);
+      this.searchError = 'Une erreur est survenue lors du chargement des articles';
     } finally {
       this.isSearching = false;
     }
   }
-}
 
-
-  async searchAllArticle() { // Méthode pour rechercher tous les articles, triés par titre croissant
-    this.isSearching = true; // Indiquer que la recherche est en cours
-    this.searchError = null; // Réinitialiser l'erreur de recherche
-    this.searchResults = []; // Réinitialiser les résultats de recherche
-
-    try {
-      const articleCollection = collection(this.firestore, 'article'); // Référence à la collection 'article'
-      const q = query(articleCollection, orderBy('titre_article', 'asc')); // Requête pour récupérer tous les articles, triés par titre croissant
-
-      const querySnapshot = await getDocs(q); // Exécution de la requête pour obtenir les documents
-      this.searchResults = []; // Réinitialisation du tableau de résultats de recherche
-
-      querySnapshot.forEach((doc) => { // Parcours de chaque document trouvé dans la collection
-        this.searchResults.push({ // Ajout des données du document dans le tableau de résultats
-          id: doc.id, // ID du document
-          ...doc.data() // Données du document
-        });
-      });
-    } catch (error) { // Gestion des erreurs lors du chargement des articles
-      console.error('Erreur lors du chargement des articles:', error); // Affichage de l'erreur dans la console
-      this.searchError = 'Une erreur est survenue lors du chargement des articles'; // Message d'erreur à afficher à l'utilisateur
-    } finally { // Bloc finally pour s'assurer que l'état de recherche est réinitialisé
-      this.isSearching = false; // Réinitialisation de l'état de recherche
-    }
-  }
-
-  clearSearch() { // Méthode pour réinitialiser le formulaire de recherche et les résultats
-    this.searchForm.reset({ // Réinitialisation du formulaire de recherche
-      searchTerm: '', // Réinitialisation du terme de recherche
-      searchType: 'titre' // Réinitialisation du type de recherche à 'titre'
+  clearSearch() {
+    this.searchForm.reset({
+      searchTerm: '',
+      searchType: 'titre_article'
     });
-    this.searchResults = []; // Réinitialisation des résultats de recherche
-    this.searchError = null; // Réinitialisation de l'erreur de recherche
+    this.searchResults = [];
+    this.searchError = null;
   }
 
-  getSearchPlaceholder(): string { // Méthode pour obtenir le placeholder dynamique en fonction du type de recherche sélectionné
-    const searchType = this.searchForm.get('searchType')?.value; // Récupération du type de recherche sélectionné
-    switch (searchType) { // Mettre les données en dut dans la barre de recherche comme exemple
-      case 'titre': return 'Ex: Introduction aux technologies web';
+  getSearchPlaceholder(): string {
+    const searchType = this.searchForm.get('searchType')?.value;
+    switch (searchType) {
+      case 'titre_article': return 'Ex: Introduction aux technologies web';
       case 'num_article': return 'Ex: ART001';
       case 'num_page': return 'Ex: 42';
       case 'desc_article': return 'Ex: Description de l\'article';
+      case 'categorie': return 'Ex: Technologie, Sport, Culture...';
+      case 'localisation_article': return 'Ex: placard, etagere, sous-sol...';
+      case 'article_revue': return 'Ex: science-vie, figaro, monde...';
       default: return 'Entrez votre recherche';
     }
   }
 
-  showAddForm() { // Nouvelle méthode pour afficher le formulaire d'ajout
+  showAddForm() {
     this.title_window = 'Ajouter un article';
     this.showForm = true;
     this.isEditing = false;
@@ -175,38 +230,41 @@ export class ArticleComponent {
     this.submitError = null;
     this.updateSuccess = false;
     this.updateError = null;
-    
-    this.editForm.reset(); // Réinitialiser le formulaire
+
+    this.editForm.reset();
 
     setTimeout(() => {
       document.querySelector('.edit-section')?.scrollIntoView({ behavior: 'smooth' });
     }, 100);
   }
 
-  async onAdd() { // Méthode pour soumettre le formulaire d'article
-    if (this.editForm.valid) { // Vérifiez que le formulaire est valide avant de soumettre
-      this.isSubmitting = true; // Indiquer que la soumission est en cours
-      this.submitSuccess = false; // Réinitialiser le succès de la soumission
-      this.submitError = null; // Réinitialiser les messages de succès et d'erreur
+  async onAdd() {
+    if (this.editForm.valid) {
+      this.isSubmitting = true;
+      this.submitSuccess = false;
+      this.submitError = null;
 
       try {
-        const formValue = this.editForm.value; // Récupération des valeurs du formulaire d'article
+        const formValue = this.editForm.value;
+        const categorieId = await this.getOrCreateCategorie(formValue.libelle_categorie);
 
-        const articleData = { // Préparation des données de l'article à soumettre
-          num_article: formValue.num_article.trim(), // le trim() est utilisé pour enlever les espaces superflus
-          titre_article: formValue.titre_article.trim(), // le trim() est utilisé pour enlever les espaces superflus
-          num_page: formValue.num_page ? Number(formValue.num_page) : null, // Assurez-vous que le numéro de page est un nombre ou null
-          desc_article: formValue.desc_article ? formValue.desc_article.trim() : '' // le trim() est utilisé pour enlever les espaces superflus
+        const articleData = {
+          num_article: formValue.num_article.trim(),
+          titre_article: formValue.titre_article.trim(),
+          num_page: formValue.num_page ? Number(formValue.num_page) : null,
+          desc_article: formValue.desc_article ? formValue.desc_article.trim() : '',
+          categorie_id: categorieId,
+          libelle_categories: formValue.libelle_categorie
         };
 
-        const articleCollection = collection(this.firestore, 'article'); // Référence à la collection 'article'
-        await addDoc(articleCollection, articleData); // Ajout de l'article à Firestore
+        const articleCollection = collection(this.firestore, 'article');
+        await addDoc(articleCollection, articleData);
 
-        this.submitSuccess = true; // Indiquer que la soumission a réussi
-        this.editForm.reset(); // Réinitialiser le formulaire après soumission réussie
+        this.submitSuccess = true;
+        this.editForm.reset();
 
-        if (this.searchResults.length > 0) { // Si des résultats de recherche sont affichés, les mettre à jour
-          await this.searchAllArticle(); // Recharger les articles
+        if (this.searchResults.length > 0) {
+          await this.searchAllArticle();
         }
 
       } catch (error) {
@@ -218,55 +276,33 @@ export class ArticleComponent {
     }
   }
 
-  // Méthodes d'édition et mise à jour des articles
+  editArticle(article: any) {
+    this.title_window = 'Édition de l\'article';
+    this.showForm = true;
+    this.isEditing = true;
+    this.selectedArticleId = article.id;
+    this.updateSuccess = false;
+    this.updateError = null;
 
-  editArticle(article: any) { // Méthode pour initier l'édition d'un article
-    this.title_window = 'Édition de l\'article'; // Mettre à jour le titre de la fenêtre pour l'édition
-    this.showForm = true; // Afficher le formulaire
-    this.isEditing = true; // Indiquer que l'on est en mode édition
-    this.selectedArticleId = article.id; // Stocker l'ID de l'article sélectionné
-    this.updateSuccess = false; // Réinitialiser le succès de la mise à jour
-    this.updateError = null; // Réinitialiser les messages de succès et d'erreur
-
-    this.editForm.patchValue({ // Pré-remplissage du formulaire d'édition avec les données de l'article sélectionné
+    this.editForm.patchValue({
       num_article: article.num_article,
       titre_article: article.titre_article,
       num_page: article.num_page,
-      desc_article: article.desc_article
+      desc_article: article.desc_article,
+      libelle_categorie: article.libelle_categories || ''
     });
 
-    setTimeout(() => { // Temporisation pour laisser le temps à l'utilisateur de voir la section d'édition
-      document.querySelector('.edit-section')?.scrollIntoView({ behavior: 'smooth' }); // Faire défiler vers la section d'édition
-    }, 100); // 100 millisecondes
-  }
-
-  addArticle(article: any) { // Méthode pour initier l'ajout d'un article
-    this.title_window = 'Ajout d\'un article'; // Mettre à jour le titre de la fenêtre pour l'ajout
-    this.showForm = true; // Afficher le formulaire
-    this.isEditing = true; // Indiquer que l'on est en mode édition
-    this.selectedArticleId = ''; // Stocker l'ID de l'article sélectionné
-    this.updateSuccess = false; // Réinitialiser le succès de la mise à jour
-    this.updateError = null; // Réinitialiser les messages de succès et d'erreur
-
-    this.editForm.patchValue({ // Pré-remplissage du formulaire d'édition avec les données de l'article sélectionné
-      num_article: '',
-      titre_article: '',
-      num_page: '',
-      desc_article: ''
-    });
-
-    setTimeout(() => { // Temporisation pour laisser le temps à l'utilisateur de voir la section d'édition
-      document.querySelector('.edit-section')?.scrollIntoView({ behavior: 'smooth' }); // Faire défiler vers la section d'édition
-    }, 100); // 100 millisecondes
+    setTimeout(() => {
+      document.querySelector('.edit-section')?.scrollIntoView({ behavior: 'smooth' });
+    }, 100);
   }
 
   async deleteArticle(articleId: string) {
     if (confirm('Voulez-vous vraiment supprimer cet article ?')) {
       try {
-        const docRef = doc(this.firestore, 'article', articleId); // Référence au document à supprimer
-        await deleteDoc(docRef); // Suppression du document
+        const docRef = doc(this.firestore, 'article', articleId);
+        await deleteDoc(docRef);
 
-        // Mettre à jour la liste après suppression
         if (this.searchResults.length > 0) {
           await this.searchAllArticle();
         }
@@ -281,54 +317,82 @@ export class ArticleComponent {
   }
 
   cancelEdit() {
-    this.showForm = false; // Cacher le formulaire
-    this.isEditing = false; // Réinitialiser l'état d'édition
-    this.selectedArticleId = null; // Réinitialiser l'ID de l'article sélectionné
-    this.editForm.reset(); // Réinitialiser le formulaire d'édition
-    this.updateSuccess = false; // Réinitialiser le succès de la mise à jour
-    this.updateError = null; // Réinitialiser l'erreur de mise à jour
+    this.showForm = false;
+    this.isEditing = false;
+    this.selectedArticleId = null;
+    this.editForm.reset();
+    this.updateSuccess = false;
+    this.updateError = null;
   }
 
   async onUpdateSubmit() {
-    console.log('ID de l\'article sélectionné :', this.selectedArticleId); // Affichage de l'ID de l'article sélectionné dans la console
     if (this.selectedArticleId === '') {
-      this.onAdd(); // Appel de la méthode pour ajouter un nouvel article si aucun ID n'est sélectionné
+      this.onAdd();
     } else {
-      this.onUpdate(); // Appel de la méthode pour mettre à jour l'article
+      this.onUpdate();
     }
   }
 
   async onUpdate() {
-    if (this.editForm.valid && this.selectedArticleId) { // Vérifiez que le formulaire d'édition est valide et qu'un article est sélectionné
-      this.isUpdating = true; // Indiquer que la mise à jour est en cours
-      this.updateSuccess = false; // Réinitialiser le succès de la mise à jour
-      this.updateError = null; // Réinitialiser les messages de succès et d'erreur
+    if (this.editForm.valid && this.selectedArticleId) {
+      this.isUpdating = true;
+      this.updateSuccess = false;
+      this.updateError = null;
 
       try {
-        const formValue = this.editForm.value; // Récupération des valeurs du formulaire d'édition
+        const formValue = this.editForm.value;
+        const categorieId = await this.getOrCreateCategorie(formValue.libelle_categorie);
 
-        const articleData = { // Préparation des données de l'article à mettre à jour
-          num_article: formValue.num_article.trim(), // le trim() est utilisé pour enlever les espaces superflus
+        const articleData = {
+          num_article: formValue.num_article.trim(),
           titre_article: formValue.titre_article.trim(),
-          num_page: formValue.num_page ? Number(formValue.num_page) : null, // Assurez-vous que le numéro de page est un nombre ou null
-          desc_article: formValue.desc_article ? formValue.desc_article.trim() : ''
+          num_page: formValue.num_page ? Number(formValue.num_page) : null,
+          desc_article: formValue.desc_article ? formValue.desc_article.trim() : '',
+          categorie_id: categorieId,
+          libelle_categories: formValue.libelle_categorie
         };
 
-        const docRef = doc(this.firestore, 'article', this.selectedArticleId); // Référence au document de l'article à mettre à jour
-        await updateDoc(docRef, articleData); // Mise à jour du document dans Firestore
+        const docRef = doc(this.firestore, 'article', this.selectedArticleId);
+        await updateDoc(docRef, articleData);
 
-        this.updateSuccess = true; // Indiquer que la mise à jour a réussi
-        this.showForm = false; // Cacher le formulaire après mise à jour
-        this.isEditing = false; // Réinitialiser l'état d'édition
-        this.editForm.reset(); // Réinitialiser le formulaire d'édition
-        await this.searchAllArticle(); // Recharger les articles après la mise à jour réussie
+        this.updateSuccess = true;
+        this.showForm = false;
+        this.isEditing = false;
+        this.editForm.reset();
+        await this.searchAllArticle();
 
-      } catch (error) { // Gestion des erreurs lors de la mise à jour
-        console.error('Erreur lors de la mise à jour:', error); // Affichage de l'erreur dans la console
-        this.updateError = 'Une erreur est survenue lors de la mise à jour'; // Message d'erreur à afficher à l'utilisateur
-      } finally { // Bloc finally pour s'assurer que l'état de mise à jour est réinitialisé
-        this.isUpdating = false; // Réinitialisation de l'état de mise à jour
+      } catch (error) {
+        console.error('Erreur lors de la mise à jour:', error);
+        this.updateError = 'Une erreur est survenue lors de la mise à jour';
+      } finally {
+        this.isUpdating = false;
       }
+    }
+  }
+
+  async getArticlesByCategorie(categorieId: string): Promise<any[]> {
+    try {
+      const articleCollection = collection(this.firestore, 'article');
+      const q = query(
+        articleCollection,
+        where('categorie_id', '==', categorieId),
+        orderBy('titre_article', 'asc')
+      );
+
+      const querySnapshot = await getDocs(q);
+      const articles: any[] = [];
+
+      querySnapshot.forEach((doc) => {
+        articles.push({
+          id: doc.id,
+          ...doc.data()
+        });
+      });
+
+      return articles;
+    } catch (error) {
+      console.error('Erreur lors de la récupération des articles par catégorie:', error);
+      return [];
     }
   }
 }

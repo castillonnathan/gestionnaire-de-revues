@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -23,8 +22,8 @@
                         <option value="num_page">Numéro de page</option>
                         <option value="desc_article">Description</option>
                         <option value="categorie">Catégorie</option>
-                        <option value="localisation">Localisation</option>
-                        <option value="revue">Revue</option>
+                        <option value="localisation_article">Localisation</option>
+                        <option value="article_revue">Revue</option>
                     </select>
                 </div>
                 <div class="search-bar">
@@ -90,57 +89,31 @@
                                        formControlName="num_page" placeholder="Ex: 42">
                             </div>
                             <div class="form-group">
-                                <label class="form-label" for="editCategorie">Catégorie</label>
-                                <select id="editCategorie" class="form-select" formControlName="categorie">
+                                <label class="form-label" for="editCategorie">Catégorie *</label>
+                                <select id="editCategorie" class="form-select" formControlName="libelle_categorie" required>
                                     <option value="">Sélectionnez une catégorie</option>
-                                    <option value="technologie">Technologie</option>
-                                    <option value="science">Science</option>
-                                    <option value="culture">Culture</option>
-                                    <option value="sport">Sport</option>
-                                    <option value="economie">Économie</option>
-                                    <option value="politique">Politique</option>
-                                    <option value="sante">Santé</option>
-                                    <option value="environnement">Environnement</option>
-                                    <option value="education">Éducation</option>
-                                    <option value="divertissement">Divertissement</option>
+                                    @for (categorie of CATEGORIES_PREDEFINES; track categorie.libelle) {
+                                        <option [value]="categorie.libelle">
+                                            {{ categorie.libelle }}
+                                        </option>
+                                    }
                                 </select>
                             </div>
                             <div class="form-group">
                                 <label class="form-label" for="editLocalisation">Localisation</label>
-                                <select id="editLocalisation" class="form-select" formControlName="localisation">
-                                    <option value="">Sélectionnez une localisation</option>
-                                    <option value="france">Placard</option>
-                                    <option value="europe">Étagère</option>
-                                    <option value="amerique-nord">Sous-sol</option>
-                                    <option value="amerique-sud">Grenier</option>
-                                    <option value="asie">Carton</option>
-                                    <option value="afrique">Caisse plastique</option>
-                                    <option value="oceanie">Sac de course</option>>
-                                </select>
+                                <input type="text" id="editLocalisation" class="form-input" 
+                                       formControlName="localisation_article" placeholder="Ex: placard, étagère, sous-sol...">
                             </div>
                             <div class="form-group">
                                 <label class="form-label" for="editRevue">Revue</label>
-                                <select id="editRevue" class="form-select" formControlName="revue">
-                                    <option value="">Sélectionnez une revue</option>
-                                    <option value="science-vie">Science & Vie</option>
-                                    <option value="recherche">La Recherche</option>
-                                    <option value="figaro">Le Figaro</option>
-                                    <option value="monde">Le Monde</option>
-                                    <option value="liberation">Libération</option>
-                                    <option value="express">L'Express</option>
-                                    <option value="nouvel-obs">Le Nouvel Observateur</option>
-                                    <option value="point">Le Point</option>
-                                    <option value="marianne">Marianne</option>
-                                    <option value="usine-nouvelle">L'Usine Nouvelle</option>
-                                    <option value="challenges">Challenges</option>
-                                    <option value="alternatives-economiques">Alternatives Économiques</option>
-                                </select>
+                                <input type="text" id="editRevue" class="form-input" 
+                                       formControlName="article_revue" placeholder="Ex: Science & Vie, Le Figaro...">
                             </div>
                         </div>
                         <div class="form-group">
-                            <label class="form-label" for="editArticleContent">Contenu de l'article</label>
+                            <label class="form-label" for="editArticleContent">Description de l'article</label>
                             <textarea id="editArticleContent" class="form-input form-textarea" 
-                                      formControlName="desc_article" placeholder="Contenu détaillé de l'article..."></textarea>
+                                      formControlName="desc_article" placeholder="Description détaillée de l'article..."></textarea>
                         </div>
 
                         <!-- Messages de succès/erreur -->
@@ -166,7 +139,7 @@
                         }
                         <div class="form-actions">
                             <button type="submit" class="form-btn" 
-                                    [disabled]="isSubmitting || isUpdating">
+                                    [disabled]="isSubmitting || isUpdating || editForm.invalid">
                                 {{ selectedArticleId ? (isUpdating ? 'Mise à jour...' : 'Mettre à jour') : (isSubmitting ? 'Ajout...' : 'Ajouter l\'article') }}
                             </button>
                             <button type="button" class="cancel-btn" (click)="cancelEdit()">
@@ -196,21 +169,6 @@
                         <div class="article-card">
                             <div class="article-number">Article {{ article.num_article }}</div>
                             <h3 class="article-title">{{ article.titre_article }}</h3>
-                            @if (article.num_page) {
-                                <div class="article-page">Page {{ article.num_page }}</div>
-                            }
-                            <div class="article-meta">
-                                @if (article.categorie) {
-                                    <span>📂 {{ article.categorie }}</span>
-                                }
-                                @if (article.localisation) {
-                                    <span>📍 {{ article.localisation }}</span>
-                                }
-                                @if (article.revue) {
-                                    <span>📖 {{ article.revue }}</span>
-                                }
-                            </div>
-                            <div class="article-content">{{ article.desc_article }}</div>
                             <div class="article-actions">
                                 <button (click)="editArticle(article)" class="edit-btn">Éditer</button>
                                 <button (click)="deleteArticle(article.id)" class="delete-btn">Supprimer</button>

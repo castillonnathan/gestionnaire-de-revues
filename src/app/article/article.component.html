@@ -1,190 +1,188 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestion des Articles</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gestion des Articles</title>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>Gestion des Articles</h1>
-            <p class="subtitle">Recherchez et gérez vos articles facilement</p>
-        </header>
+<div class="container">
+  <header>
+    <h1>Gestion des Articles</h1>
+    <p class="subtitle">Recherchez et gérez vos articles facilement</p>
+  </header>
 
-        <!-- Section de recherche -->
-        <div class="search-section">
-            <form [formGroup]="searchForm">
-                <div class="search-controls">
-                    <select formControlName="searchType" class="search-select">
-                        <option value="titre_article">Titre de l'article</option>
-                        <option value="num_article">Numéro d'article</option>
-                        <option value="num_page">Numéro de page</option>
-                        <option value="desc_article">Description</option>
-                        <option value="categorie">Catégorie</option>
-                        <option value="localisation_article">Localisation</option>
-                        <option value="article_revue">Revue</option>
-                    </select>
-                </div>
-                <div class="search-bar">
-                    <input type="text" id="searchInput" class="search-input" 
-                           formControlName="searchTerm" 
-                           [placeholder]="getSearchPlaceholder()">
-                    <button type="button" class="search-btn" 
-                            (click)="searchArticle()" 
-                            [disabled]="isSearching">
-                        {{ isSearching ? 'Recherche...' : 'Rechercher' }}
-                    </button>
-                    <button type="button" class="search-btn" 
-                            (click)="searchAllArticle()" 
-                            [disabled]="isSearching">
-                        Tous les articles
-                    </button>
-                    <button type="button" class="search-btn" 
-                            (click)="clearSearch()">
-                        Effacer
-                    </button>
-                </div>
-            </form>
+  <!-- Section de recherche -->
+  <div class="search-section">
+    <form [formGroup]="searchForm">
+      <div class="search-controls">
+        <select formControlName="searchType" class="search-select">
+          <option value="titre_article">Titre de l'article</option>
+          <option value="num_article">Numéro d'article</option>
+          <option value="num_page">Numéro de page</option>
+          <option value="desc_article">Description</option>
+          <option value="categorie">Catégorie</option>
+          <option value="localisation_article">Localisation</option>
+          <option value="article_revue">Revue</option>
+        </select>
+      </div>
+      <div class="search-bar">
+        <input type="text" id="searchInput" class="search-input"
+               formControlName="searchTerm"
+               [placeholder]="getSearchPlaceholder()">
+        <button type="button" class="search-btn"
+                (click)="searchArticle()"
+                [disabled]="isSearching">
+          {{ isSearching ? 'Recherche...' : 'Rechercher' }}
+        </button>
+        <button type="button" class="search-btn"
+                (click)="searchAllArticle()"
+                [disabled]="isSearching">
+          Tous les articles
+        </button>
+        <button type="button" class="search-btn"
+                (click)="clearSearch()">
+          Effacer
+        </button>
+      </div>
+    </form>
+    @if (searchError) {
+      <div class="error-message">
+        {{ searchError }}
+      </div>
+    }
+  </div>
 
-            <!-- Messages d'erreur de recherche -->
-            @if (searchError) {
-                <div class="error-message">
-                    {{ searchError }}
-                </div>
-            }
-        </div>
-
-        <!-- Bouton pour afficher le formulaire d'ajout -->
-        @if (!showForm) {
-            <div class="add-button-section">
-                <button type="button" class="add-article-btn" (click)="showAddForm()">
-                    Ajouter un article
-                </button>
-            </div>
-        }
-
-        <!-- Section d'ajout/édition -->
-        @if (showForm) {
-            <div class="form-section">
-                <h2 class="form-title">{{ title_window || 'Ajouter un article' }}</h2>
-
-                <!-- Formulaire d'ajout/édition -->
-                <div class="edit-section">
-                    <form [formGroup]="editForm" (ngSubmit)="selectedArticleId ? onUpdateSubmit() : onAdd()">
-                        <div class="form-grid">
-                            <div class="form-group">
-                                <label class="form-label" for="editArticleNumber">Numéro d'article *</label>
-                                <input type="text" id="editArticleNumber" class="form-input" 
-                                       formControlName="num_article" required placeholder="Ex: ART001">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label" for="editArticleTitle">Titre de l'article *</label>
-                                <input type="text" id="editArticleTitle" class="form-input" 
-                                       formControlName="titre_article" required placeholder="Titre de l'article">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label" for="editPageNumber">Numéro de page</label>
-                                <input type="number" id="editPageNumber" class="form-input" 
-                                       formControlName="num_page" placeholder="Ex: 42">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label" for="editCategorie">Catégorie *</label>
-                                <select id="editCategorie" class="form-select" formControlName="libelle_categorie" required>
-                                    <option value="">Sélectionnez une catégorie</option>
-                                    @for (categorie of table_categorie; track categorie.libelle_categorie) {
-                                        <option [value]="categorie.libelle_categorie">
-                                            {{ categorie.libelle_categorie }} - 
-                                        </option>
-                                    }
-                                </select>
-                            </div>
-                            <!--<div class="form-group">
-                                <label class="form-label" for="editLocalisation">Localisation</label>
-                                <input type="text" id="editLocalisation" class="form-input" 
-                                       formControlName="localisation_article" placeholder="Ex: placard, étagère, sous-sol...">
-                            </div>-->
-                            <!--<div class="form-group">
-                                <label class="form-label" for="editRevue">Revue</label>
-                                <input type="text" id="editRevue" class="form-input" 
-                                       formControlName="article_revue" placeholder="Ex: Science & Vie, Le Figaro...">
-                            </div>-->
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label" for="editArticleContent">Description de l'article</label>
-                            <textarea id="editArticleContent" class="form-input form-textarea" 
-                                      formControlName="desc_article" placeholder="Description détaillée de l'article..."></textarea>
-                        </div>
-
-                        <!-- Messages de succès/erreur -->
-                        @if (submitSuccess) {
-                            <div class="success-message">
-                                Article ajouté avec succès !
-                            </div>
-                        }
-                        @if (updateSuccess) {
-                            <div class="success-message">
-                                Article mis à jour avec succès !
-                            </div>
-                        }
-                        @if (submitError) {
-                            <div class="error-message">
-                                {{ submitError }}
-                            </div>
-                        }
-                        @if (updateError) {
-                            <div class="error-message">
-                                {{ updateError }}
-                            </div>
-                        }
-                        <div class="form-actions">
-                            <button type="submit" class="form-btn" 
-                                    [disabled]="isSubmitting || isUpdating || editForm.invalid">
-                                {{ selectedArticleId ? (isUpdating ? 'Mise à jour...' : 'Mettre à jour') : (isSubmitting ? 'Ajout...' : 'Ajouter l\'article') }}
-                            </button>
-                            <button type="button" class="cancel-btn" (click)="cancelEdit()">
-                                Annuler
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        }
-
-        <!-- Section des articles -->
-        <div class="articles-section">
-            <h2 class="articles-title">Liste des articles</h2>
-            
-            <!-- Indicateur de chargement -->
-            @if (isSearching) {
-                <div class="loading">
-                    Chargement des articles...
-                </div>
-            }
-
-            <!-- Grille des articles -->
-            @if (!isSearching && searchResults.length > 0) {
-                <div class="articles-grid">
-                    @for (article of searchResults; track article.id) {
-                        <div class="article-card">
-                            <div class="article-number">Article {{ article.num_article }}</div>
-                            <h3 class="article-title">{{ article.titre_article }}</h3>
-                            <div class="article-actions">
-                                <button (click)="editArticle(article)" class="edit-btn">Éditer</button>
-                                <button (click)="deleteArticle(article.id)" class="delete-btn">Supprimer</button>
-                            </div>
-                        </div>
-                    }
-                </div>
-            }
-            
-            <!-- Message si aucun résultat -->
-            @if (!isSearching && searchResults.length === 0) {
-                <div class="no-results">
-                    Aucun article trouvé. Cliquez sur "Tous les articles" pour voir tous les articles ou effectuez une recherche.
-                </div>
-            }
-        </div>
+  <!-- Bouton pour afficher le formulaire d'ajout -->
+  @if (!showForm) {
+    <div class="add-button-section">
+      <button type="button" class="add-article-btn" (click)="showAddForm()">
+        Ajouter un article
+      </button>
     </div>
+  }
+
+  <!-- Section d'ajout/édition -->
+  @if (showForm) {
+    <div class="form-section">
+      <h2 class="form-title">{{ title_window || 'Ajouter un article' }}</h2>
+      <div class="edit-section">
+        <form [formGroup]="editForm" (ngSubmit)="selectedArticleId ? onUpdateSubmit() : onAdd()">
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label" for="editArticleNumber">Numéro d'article</label>
+              <input type="text" id="editArticleNumber" class="form-input"
+                     formControlName="num_article" required placeholder="Ex: ART001">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="editArticleTitle">Titre de l'article (obligatoire)</label>
+              <input type="text" id="editArticleTitle" class="form-input"
+                     formControlName="titre_article" required placeholder="Titre de l'article">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="editPageNumber">Numéro de page</label>
+              <input type="number" id="editPageNumber" class="form-input"
+                     formControlName="num_page" placeholder="Ex: 42">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="editCategorie">Catégorie (obligatoire)</label>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <select id="editCategorie" class="form-select" formControlName="libelle_categorie" required>
+                  <option value="">Sélectionnez une catégorie</option>
+                  @for (categorie of table_categorie; track categorie.libelle_categorie) {
+                    <option [value]="categorie.libelle_categorie">
+                      {{ categorie.libelle_categorie }}
+                    </option>
+                  }
+                </select>
+                <button type="button" (click)="showAddCategoriePrompt()" title="Ajouter une catégorie">+</button>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="editLocalisation">Localisation</label>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <select id="editLocalisation" class="form-select" formControlName="libelle_localisation">
+                  <option value="">Sélectionnez une localisation</option>
+                  @for (localisation of table_localisation; track localisation.libelle_localisation) {
+                    <option [value]="localisation.libelle_localisation">
+                      {{ localisation.libelle_localisation }}
+                    </option>
+                  }
+                </select>
+                <button type="button" (click)="showAddLocalisationPrompt()" title="Ajouter une localisation">+</button>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="editArticleRevue">Revue</label>
+              <input type="text" id="editArticleRevue" class="form-input"
+                     formControlName="article_revue" placeholder="Ex: Science et Vie, Le Figaro...">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="editArticleContent">Description de l'article</label>
+            <textarea id="editArticleContent" class="form-input form-textarea"
+                      formControlName="desc_article" placeholder="Description détaillée de l'article..."></textarea>
+          </div>
+          @if (submitSuccess) {
+            <div class="success-message">Article ajouté avec succès !</div>
+          }
+          @if (updateSuccess) {
+            <div class="success-message">Article mis à jour avec succès !</div>
+          }
+          @if (submitError) {
+            <div class="error-message">{{ submitError }}</div>
+          }
+          @if (updateError) {
+            <div class="error-message">{{ updateError }}</div>
+          }
+          <div class="form-actions">
+            <button type="submit" class="form-btn"
+                    [disabled]="isSubmitting || isUpdating || editForm.invalid">
+              {{ selectedArticleId ? (isUpdating ? 'Mise à jour...' : 'Mettre à jour')
+               : (isSubmitting ? 'Ajout...' : 'Ajouter l\'article') }}
+            </button>
+            <button type="button" class="cancel-btn" (click)="cancelEdit()">Annuler</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+
+  <!-- Section des articles -->
+  <div class="articles-section">
+    <h2 class="articles-title">Liste des articles</h2>
+    @if (isSearching) {
+      <div class="loading">Chargement des articles...</div>
+    }
+    @if (!isSearching && searchResults.length > 0) {
+      <div class="articles-grid">
+        @for (article of searchResults; track article.id) {
+          <div class="article-card">
+            <div class="article-number">Article {{ article.num_article }}</div>
+            <h3 class="article-title">{{ article.titre_article }}</h3>
+            @if (article.libelle_localisation) {
+              <div class="article-location">📍 {{ article.libelle_localisation }}</div>
+            }
+            @if (article.libelle_categories) {
+              <div class="article-category">🏷️ {{ article.libelle_categories }}</div>
+            }
+            @if (article.article_revue) {
+              <div class="article-revue">📖 {{ article.article_revue }}</div>
+            }
+            <div class="article-actions">
+              <button (click)="editArticle(article)" class="edit-btn">Éditer</button>
+              <button (click)="deleteArticle(article.id)" class="delete-btn">Supprimer</button>
+            </div>
+          </div>
+        }
+      </div>
+    }
+    @if (!isSearching && searchResults.length === 0) {
+      <div class="no-results">
+        Aucun article trouvé. Cliquez sur "Tous les articles" pour voir tous les articles ou effectuez une recherche.
+      </div>
+    }
+  </div>
+</div>
 </body>
 </html>

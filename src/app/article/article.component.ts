@@ -349,8 +349,6 @@ export class ArticleComponent implements OnInit {
           localisation_id: localisationId,
           libelle_localisation: formValue.libelle_localisation ? formValue.libelle_localisation.trim() : '',
           article_revue: formValue.article_revue ? formValue.article_revue.trim() : '',
-          date_creation: new Date(),
-          date_modification: new Date()
         };
 
         const articleCollection = collection(this.firestore, 'article');
@@ -431,6 +429,7 @@ export class ArticleComponent implements OnInit {
     const newCategorie = prompt('Entrez le nom de la nouvelle catégorie :');
     if (newCategorie && newCategorie.trim() !== '') {
       try {
+        const categorieId = await this.getOrCreateCategorie(newCategorie.trim());
         await this.loadCategories();
         this.editForm.get('libelle_categorie')?.setValue(newCategorie.trim());
         alert(`Catégorie "${newCategorie}" ajoutée avec succès.`);
@@ -446,6 +445,7 @@ export class ArticleComponent implements OnInit {
     const newLocalisation = prompt('Entrez le nom de la nouvelle localisation :');
     if (newLocalisation && newLocalisation.trim() !== '') {
       try {
+        const localisationId = await this.getOrCreateLocalisation(newLocalisation.trim());
         await this.loadLocalisations();
         this.editForm.get('libelle_localisation')?.setValue(newLocalisation.trim());
         alert(`Localisation "${newLocalisation}" ajoutée avec succès.`);

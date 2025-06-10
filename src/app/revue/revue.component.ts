@@ -2,6 +2,7 @@ import { Component, inject } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { Firestore, collection, addDoc, query, where, getDocs, orderBy, doc, updateDoc, deleteDoc } from '@angular/fire/firestore';
 import { CommonModule } from '@angular/common';
+import { endAt, startAt } from 'firebase/firestore';
 
 @Component({
   selector: 'app-revue',
@@ -44,74 +45,103 @@ private fb = inject(FormBuilder); // Injection du FormBuilder pour créer des fo
     });
   }
 
-  async searchRevue() { // Méthode pour rechercher des revues en fonction des critères spécifiés dans le formulaire de recherche
-    if (this.searchForm.valid) { // Vérifiez que le formulaire de recherche est valide avant de procéder à la recherche
-      this.isSearching = true; // Indiquer que la recherche est en cours
-      this.searchError = null; // Réinitialiser l'erreur de recherche
-      this.searchResults = []; // Réinitialiser les résultats de recherche
+  async searchRevue() {
+    if (this.searchForm.valid) {
+      this.isSearching = true;
+      this.searchError = null;
+      this.searchResults = [];
 
       try {
-        const searchTerm = this.searchForm.value.searchTerm.trim(); //  Récupération du terme de recherche et suppression des espaces superflus
-        const searchType = this.searchForm.value.searchType; // Récupération du type de recherche sélectionné (titre, id, date)
+        const searchTerm = this.searchForm.value.searchTerm.trim().toLowerCase();
+        const searchType = this.searchForm.value.searchType;
 
-        const revuesCollection = collection(this.firestore, 'revue'); // Référence à la collection 'revue' dans Firestore
-        let q; // Déclaration de la variable de requête
+        const revuesCollection = collection(this.firestore, 'revue');
+        let q;
 
-        switch (searchType) { // Détermination de la requête en fonction du type de recherche sélectionné
-          case 'titre': // Recherche par titre de revue 
-            q = query( // Référence à la collection 'revue' dans Firestore
-              revuesCollection, // Création de la requête pour rechercher les revues par titre
-              where('titre_revue', '>=', searchTerm), // Condition pour rechercher les revues dont le titre commence par le terme de recherche
-              where('titre_revue', '<=', searchTerm + '\uf8ff'), // Condition pour rechercher les revues dont le titre se termine par le terme de recherche
-              orderBy('titre_revue') // Tri des résultats par titre de revue
-            );
-            break; // Recherche par ID de revue
+        switch (searchType) {
+          case 'titre' :
+            q = query(revuesCollection, orderBy("titre_revue"));
+            const querySnapshot = await getDocs(q);
 
-          case 'id': // Recherche par ID de revue
-            const numRevue = Number(searchTerm); // Conversion du terme de recherche en nombre
-            if (isNaN(numRevue)) { // Vérification si le terme de recherche est un nombre valide
-              throw new Error('Le numéro de revue doit être un nombre'); // Si ce n'est pas un nombre valide, lancer une erreur
-            }
-            q = query( // Création de la requête pour rechercher les revues par ID
-              revuesCollection, // Référence à la collection 'revue' dans Firestore
-              where('num_revue', '==', numRevue) // Condition pour rechercher les revues dont le numéro correspond au terme de recherche
-            );
-            break; // Recherche par date de sortie
+            this.searchResults = [];
+            querySnapshot.forEach((doc) => {
+              const data = doc.data();
+              const titreRevue = data['titre_revue']?.toLowerCase() || '';
 
-          case 'date': // Recherche par date de sortie de revue
-            q = query( // Création de la requête pour rechercher les revues par date de sortie
-              revuesCollection, // Référence à la collection 'revue' dans Firestore
-              where('date_sortie', '==', searchTerm), // Condition pour rechercher les revues dont la date de sortie correspond au terme de recherche
-              orderBy('date_sortie') // Tri des résultats par date de sortie
-            );
-            break; // Recherche par date de sortie
+              if (titreRevue.includes(searchTerm)) {
+                this.searchResults.push({
+                  id: doc.id,
+                  ...data
+                });
+              }
+            });
 
-          default: // Gestion des types de recherche non valides
-            throw new Error('Type de recherche non valide'); // Gestion des types de recherche non valides
-        }
+            // ce code permet de faire un tri car le LIKE n'est pas disponible avec FIRESTORE
+            // cette procédure est égal à Select * From revue Where titre_revue LIKE searchTerm
+            this.searchResults.sort((a, b) => {
+              const titleA = a.titre_revue?.toLowerCase() || '';
+              const titleB = b.titre_revue?.toLowerCase() || '';
 
-        const querySnapshot = await getDocs(q); // Exécution de la requête pour obtenir les documents
-        this.searchResults = []; // Réinitialisation du tableau de résultats de recherche
+              const startsWithA = titleA.startsWith(searchTerm);
+              const startsWithB = titleB.startsWith(searchTerm);
 
-        querySnapshot.forEach((doc) => { // Parcours de chaque document trouvé dans la collection
-          this.searchResults.push({ // Ajout des données du document dans le tableau de résultats
-            id: doc.id, // ID du document
-            ...doc.data() // Données du document
+              if (startsWithA && !startsWithB) return -1;
+              if (!startsWithA && startsWithB) return 1;
+            return titleA.localeCompare(titleB);
           });
-        });
+          break;
 
-        if (this.searchResults.length === 0) { // Si aucun résultat n'est trouvé, afficher un message d'erreur
-          this.searchError = 'Aucun résultat trouvé avec ces critères'; // Message d'erreur à afficher à l'utilisateur
-        }
+        case 'id':
+          const numRevue = Number(searchTerm);
+          if (isNaN(numRevue)) {
+            throw new Error('Le numéro de revue doit être un nombre');
+          }
+          q = query(
+            revuesCollection,
+            where('num_revue', '==', numRevue)
+          );
+          const idSnapshot = await getDocs(q);
+          this.searchResults = [];
+          idSnapshot.forEach((doc) => {
+            this.searchResults.push({
+              id: doc.id,
+              ...doc.data()
+            });
+          });
+          break;
 
-      } catch (error) { // Gestion des erreurs lors de la recherche
-        console.error('Erreur lors de la recherche:', error); // Affichage de l'erreur dans la console
-        this.searchError = 'Une erreur est survenue lors de la recherche: ' + (error as Error).message; // Message d'erreur à afficher à l'utilisateur
-      } finally { // Bloc finally pour s'assurer que l'état de recherche est réinitialisé
-        this.isSearching = false; // Réinitialisation de l'état de recherche
+        case 'date':
+          q = query(
+            revuesCollection,
+            where('date_sortie', '==', searchTerm),
+            orderBy('date_sortie')
+          );
+          const dateSnapshot = await getDocs(q);
+          this.searchResults = [];
+          dateSnapshot.forEach((doc) => {
+            this.searchResults.push({
+              id: doc.id,
+              ...doc.data()
+            });
+          });
+          break;
+
+        default:
+          throw new Error('Type de recherche non valide');
       }
+
+      if (this.searchResults.length === 0) {
+        this.searchError = 'Aucun résultat trouvé avec ces critères';
+      }
+
+    } catch (error) {
+      console.error('Erreur lors de la recherche:', error);
+      this.searchError = 'Une erreur est survenue lors de la recherche: ' + (error as Error).message;
+    } finally {
+      this.isSearching = false;
     }
   }
+}
 
   async searchAllRevues() { // Méthode pour rechercher toutes les revues, triées par date de sortie décroissante
     this.isSearching = true; // Indiquer que la recherche est en cours

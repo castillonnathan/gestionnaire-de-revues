@@ -170,8 +170,6 @@ export class LocalisationComponent {
 
         const LocalisationData = {
           libelle_localisation: formValue.libelle_localisation.trim(),
-          date_creation: new Date(),
-          date_modification: new Date()
         };
 
         const LocalisationCollection = collection(this.firestore, 'localisation');
@@ -260,7 +258,6 @@ export class LocalisationComponent {
 
         const LocalisationData = {
           libelle_localisation: formValue.libelle_localisation.trim(),
-          date_modification: new Date()
         };
 
         const docRef = doc(this.firestore, 'localisation', this.selectedLocalisationId);
@@ -370,8 +367,6 @@ export class LocalisationComponent {
       } else {
         const nouvelleLocalisationData = {
           libelle_localisation: libelle,
-          date_creation: new Date(),
-          date_modification: new Date()
         };
 
         const docRef = await addDoc(localisationCollection, nouvelleLocalisationData);

@@ -70,11 +70,6 @@
         <form [formGroup]="editForm" (ngSubmit)="selectedArticleId ? onUpdateSubmit() : onAdd()">
           <div class="form-grid">
             <div class="form-group">
-              <label class="form-label" for="editArticleNumber">Numéro d'article</label>
-              <input type="text" id="editArticleNumber" class="form-input"
-                     formControlName="num_article" required placeholder="Ex: ART001">
-            </div>
-            <div class="form-group">
               <label class="form-label" for="editArticleTitle">Titre de l'article (obligatoire)</label>
               <input type="text" id="editArticleTitle" class="form-input"
                      formControlName="titre_article" required placeholder="Titre de l'article">
@@ -87,10 +82,10 @@
             <div class="form-group">
               <label class="form-label" for="editCategorie">Catégorie (obligatoire)</label>
               <div style="display: flex; align-items: center; gap: 8px;">
-                <select id="editCategorie" class="form-select" formControlName="libelle_categorie" required>
+                <select id="editCategorie" class="form-select" formControlName="categorie_id" required>
                   <option value="">Sélectionnez une catégorie</option>
-                  @for (categorie of table_categorie; track categorie.libelle_categorie) {
-                    <option [value]="categorie.libelle_categorie">
+                  @for (categorie of table_categorie; track categorie.id) {
+                    <option [value]="categorie.id">
                       {{ categorie.libelle_categorie }}
                     </option>
                   }
@@ -101,10 +96,10 @@
             <div class="form-group">
               <label class="form-label" for="editLocalisation">Localisation</label>
               <div style="display: flex; align-items: center; gap: 8px;">
-                <select id="editLocalisation" class="form-select" formControlName="libelle_localisation">
+                <select id="editLocalisation" class="form-select" formControlName="localisation_id">
                   <option value="">Sélectionnez une localisation</option>
-                  @for (localisation of table_localisation; track localisation.libelle_localisation) {
-                    <option [value]="localisation.libelle_localisation">
+                  @for (localisation of table_localisation; track localisation.id) {
+                    <option [value]="localisation.id">
                       {{ localisation.libelle_localisation }}
                     </option>
                   }
@@ -113,9 +108,18 @@
               </div>
             </div>
             <div class="form-group">
-              <label class="form-label" for="editArticleRevue">Revue</label>
-              <input type="text" id="editArticleRevue" class="form-input"
-                     formControlName="article_revue" placeholder="Ex: Science et Vie, Le Figaro...">
+              <label class="form-label" for="editRevue">Revue</label>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <select id="editRevue" class="form-select" formControlName="revue_id">
+                  <option value="">Sélectionnez une revue</option>
+                  @for (revue of table_revue; track revue.id) {
+                    <option [value]="revue.id">
+                      {{ revue.titre_revue }}
+                    </option>
+                  }
+                </select>
+                <button type="button" (click)="showAddRevuePrompt()" title="Ajouter une revue">+</button>
+              </div>
             </div>
           </div>
           <div class="form-group">
@@ -158,16 +162,21 @@
       <div class="articles-grid">
         @for (article of searchResults; track article.id) {
           <div class="article-card">
-            <div class="article-number">Article {{ article.num_article }}</div>
             <h3 class="article-title">{{ article.titre_article }}</h3>
-            @if (article.libelle_localisation) {
-              <div class="article-location">📍 {{ article.libelle_localisation }}</div>
+            @if (article.num_page) {
+              <div class="article-page">📄 Page {{ article.num_page }}</div>
             }
-            @if (article.libelle_categories) {
-              <div class="article-category">🏷️ {{ article.libelle_categories }}</div>
+            @if (article.localisation_id) {
+              <div class="article-location">📍 {{ getLocalisationLibelle(article.localisation_id) }}</div>
             }
-            @if (article.article_revue) {
-              <div class="article-revue">📖 {{ article.article_revue }}</div>
+            @if (article.categorie_id) {
+              <div class="article-category">🏷️ {{ getCategorieLibelle(article.categorie_id) }}</div>
+            }
+            @if (article.revue_id) {
+              <div class="article-revue">📖 {{ getRevueTitre(article.revue_id) }}</div>
+            }
+            @if (article.desc_article) {
+              <div class="article-description">{{ article.desc_article }}</div>
             }
             <div class="article-actions">
               <button (click)="editArticle(article)" class="edit-btn">Éditer</button>

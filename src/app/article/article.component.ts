@@ -2,6 +2,7 @@ import { Component, inject, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { Firestore, collection, addDoc, query, where, getDocs, orderBy, doc, updateDoc, deleteDoc } from '@angular/fire/firestore';
 import { CommonModule } from '@angular/common';
+import { identifierName } from '@angular/compiler';
 
 @Component({
   selector: 'app-article',
@@ -40,6 +41,7 @@ export class ArticleComponent implements OnInit {
   // Tables pour les données de référence
   table_categorie: any[] = [];
   table_localisation: any[] = [];
+  table_revue: any[] = [];
 
   constructor() {
     this.searchForm = this.fb.group({
@@ -49,13 +51,12 @@ export class ArticleComponent implements OnInit {
 
     // Initialisation du formulaire d'édition
     this.editForm = this.fb.group({
-      num_article: ['', [Validators.required]],
       titre_article: ['', [Validators.required]],
       num_page: [''],
       desc_article: [''],
-      libelle_categorie: ['', [Validators.required]],
-      libelle_localisation: [''],
-      article_revue: ['']
+      categorie_id: ['', [Validators.required]],
+      localisation_id: [''],
+      revue_id: ['']
     });
   }
 
@@ -63,6 +64,7 @@ export class ArticleComponent implements OnInit {
   async ngOnInit() {
     await this.loadCategories();
     await this.loadLocalisations();
+    await this.loadRevues();
   }
 
   // Méthode pour charger les catégories
@@ -96,6 +98,39 @@ export class ArticleComponent implements OnInit {
       this.table_localisation = [];
     }
   }
+
+  // Méthode pour charger les revues
+  async loadRevues() {
+  try {
+    const revueCollection = collection(this.firestore, 'revue');
+    // Pas de orderBy au cas où le champ titre_revue n'existerait pas sur tous les documents
+    const querySnapshot = await getDocs(revueCollection);
+    
+    this.table_revue = [];
+    querySnapshot.forEach((doc) => {
+      const data = doc.data();
+      console.log('Données revue récupérées:', { id: doc.id, ...data }); // Debug
+      
+      this.table_revue.push({
+        id: doc.id,
+        ...data
+      });
+    });
+    
+    // Trier après récupération pour éviter les erreurs Firestore
+    this.table_revue.sort((a, b) => {
+      const titleA = a.titre_revue || '';
+      const titleB = b.titre_revue || '';
+      return titleA.localeCompare(titleB);
+    });
+    
+    console.log('Table revues chargée:', this.table_revue); // Debug
+    
+  } catch (error) {
+    console.error('Erreur lors du chargement des revues:', error);
+    this.table_revue = [];
+  }
+}
 
   // Méthode pour récupérer ou créer une catégorie
   async getOrCreateCategorie(libelle: string): Promise<string> {
@@ -132,6 +167,9 @@ export class ArticleComponent implements OnInit {
         await updateDoc(docRef, {
           id: docRef.id
         });
+
+        // Recharger les catégories pour mettre à jour la liste
+        await this.loadCategories();
 
         return docRef.id;
       }
@@ -177,6 +215,9 @@ export class ArticleComponent implements OnInit {
           id: docRef.id
         });
 
+        // Recharger les localisations pour mettre à jour la liste
+        await this.loadLocalisations();
+
         return docRef.id;
       }
     } catch (error) {
@@ -184,6 +225,77 @@ export class ArticleComponent implements OnInit {
       throw error;
     }
   }
+
+  // Méthode pour récupérer ou créer une revue
+  async getOrCreateRevue(libelle: string): Promise<string> {
+  try {
+    const revueCollection = collection(this.firestore, 'revue');
+    const q = query(
+      revueCollection,
+      where('titre_revue', '==', libelle)
+    );
+
+    const querySnapshot = await getDocs(q);
+
+    if (!querySnapshot.empty) {
+      const revueDoc = querySnapshot.docs[0];
+      const revueId = revueDoc.id;
+
+      const revueData = revueDoc.data();
+      if (!revueData['id']) {
+        await updateDoc(doc(this.firestore, 'revue', revueId), {
+          id: revueId
+        });
+      }
+
+      return revueId;
+    } else {
+      const nouvelleRevueData = {
+        titre_revue: libelle,
+        date_creation: new Date(), // Ajout des dates pour cohérence
+        date_modification: new Date()
+      };
+
+      const docRef = await addDoc(revueCollection, nouvelleRevueData);
+
+      await updateDoc(docRef, {
+        id: docRef.id
+      });
+
+      // Recharger les revues pour mettre à jour la liste
+      await this.loadRevues();
+
+      return docRef.id;
+    }
+  } catch (error) {
+    console.error('Erreur lors de la création/récupération de la revue:', error);
+    throw error;
+  }
+}
+
+  // Méthode pour obtenir le libellé d'une catégorie par son ID
+  getCategorieLibelle(categorieId: string): string {
+    const categorie = this.table_categorie.find(c => c.id === categorieId);
+    return categorie ? categorie.libelle_categorie : '';
+  }
+
+  // Méthode pour obtenir le libellé d'une localisation par son ID
+  getLocalisationLibelle(localisationId: string): string {
+    const localisation = this.table_localisation.find(l => l.id === localisationId);
+    return localisation ? localisation.libelle_localisation : '';
+  }
+
+  // Méthode pour obtenir le libellé d'une revue par son ID
+  getRevueTitre(revueId: string): string {
+  if (!revueId) return '';
+  
+  const revue = this.table_revue.find(r => r.id === revueId);
+  const libelle = revue ? (revue.titre_revue || '') : '';
+  
+  console.log(`Recherche revue ID: ${revueId}, trouvé:`, revue, `libellé: ${libelle}`); // Debug
+  
+  return libelle;
+}
 
   // Méthode pour rechercher des articles en fonction des critères
   async searchArticle() {
@@ -200,10 +312,10 @@ export class ArticleComponent implements OnInit {
         let q;
 
         // Cas recherche par numéro ou page
-        if (searchType === 'num_article' || searchType === 'num_page') {
+        if (searchType === 'num_page') {
           q = query(
             articleCollection,
-            where(searchType, '==', searchType === 'num_page' ? Number(searchTerm) : searchTerm)
+            where(searchType, '==', Number(searchTerm))
           );
         } else {
           // Sinon, on charge tout et on filtre côté client
@@ -218,25 +330,29 @@ export class ArticleComponent implements OnInit {
           tempResults.push(data);
         });
 
-        // On filtre en local
-        if (searchType === 'titre_article' || searchType === 'desc_article' || searchType === 'categorie' || searchType === 'localisation_article' || searchType === 'article_revue') {
+        // On filtre en local pour les autres types de recherche
+        if (searchType === 'titre_article' || searchType === 'desc_article') {
           this.searchResults = tempResults.filter((article) => {
-            let fieldToSearch = '';
-            switch (searchType) {
-              case 'categorie':
-                fieldToSearch = article['libelle_categories'] || '';
-                break;
-              case 'localisation_article':
-                fieldToSearch = article['libelle_localisation'] || '';
-                break;
-              default:
-                fieldToSearch = article[searchType] || '';
-                break;
-            }
+            const fieldToSearch = article[searchType] || '';
             return fieldToSearch.toLowerCase().includes(searchTerm.toLowerCase());
           });
+        } else if (searchType === 'categorie') {
+          this.searchResults = tempResults.filter((article) => {
+            const categorieLibelle = this.getCategorieLibelle(article.categorie_id);
+            return categorieLibelle.toLowerCase().includes(searchTerm.toLowerCase());
+          });
+        } else if (searchType === 'localisation_article') {
+          this.searchResults = tempResults.filter((article) => {
+            const localisationLibelle = this.getLocalisationLibelle(article.localisation_id);
+            return localisationLibelle.toLowerCase().includes(searchTerm.toLowerCase());
+          });
+        } else if (searchType === 'article_revue') {
+          this.searchResults = tempResults.filter((article) => {
+            const revueLibelle = this.getRevueTitre(article.revue_id);
+            return revueLibelle.toLowerCase().includes(searchTerm.toLowerCase());
+          });
         } else {
-          // Numéro article / page → pas de filtrage car déjà géré dans la requête
+          // Numéro page → pas de filtrage car déjà géré dans la requête
           this.searchResults = tempResults;
         }
 
@@ -295,7 +411,6 @@ export class ArticleComponent implements OnInit {
     const searchType = this.searchForm.get('searchType')?.value;
     switch (searchType) {
       case 'titre_article': return 'Ex: Introduction aux technologies web';
-      case 'num_article': return 'Ex: ART001';
       case 'num_page': return 'Ex: 42';
       case 'desc_article': return 'Ex: Description de l\'article';
       case 'categorie': return 'Ex: Technologie, Sport, Culture...';
@@ -332,23 +447,16 @@ export class ArticleComponent implements OnInit {
 
       try {
         const formValue = this.editForm.value;
-        const categorieId = await this.getOrCreateCategorie(formValue.libelle_categorie);
         
-        let localisationId = null;
-        if (formValue.libelle_localisation && formValue.libelle_localisation.trim()) {
-          localisationId = await this.getOrCreateLocalisation(formValue.libelle_localisation.trim());
-        }
-
         const articleData = {
-          num_article: formValue.num_article.trim(),
           titre_article: formValue.titre_article.trim(),
           num_page: formValue.num_page ? Number(formValue.num_page) : null,
           desc_article: formValue.desc_article ? formValue.desc_article.trim() : '',
-          categorie_id: categorieId,
-          libelle_categories: formValue.libelle_categorie.trim(),
-          localisation_id: localisationId,
-          libelle_localisation: formValue.libelle_localisation ? formValue.libelle_localisation.trim() : '',
-          article_revue: formValue.article_revue ? formValue.article_revue.trim() : '',
+          categorie_id: formValue.categorie_id,
+          localisation_id: formValue.localisation_id || null,
+          revue_id: formValue.revue_id || null,
+          date_creation: new Date(),
+          date_modification: new Date()
         };
 
         const articleCollection = collection(this.firestore, 'article');
@@ -379,24 +487,13 @@ export class ArticleComponent implements OnInit {
     this.updateSuccess = false;
     this.updateError = null;
 
-    let libelleCategorie = article.libelle_categories || '';
-    if (!libelleCategorie && article.categorie_id) {
-      libelleCategorie = await this.getCategorieById(article.categorie_id);
-    }
-
-    let libelleLocalisation = article.libelle_localisation || '';
-    if (!libelleLocalisation && article.localisation_id) {
-      libelleLocalisation = await this.getLocalisationById(article.localisation_id);
-    }
-
     this.editForm.patchValue({
-      num_article: article.num_article,
       titre_article: article.titre_article,
       num_page: article.num_page,
       desc_article: article.desc_article,
-      libelle_categorie: libelleCategorie,
-      libelle_localisation: libelleLocalisation,
-      article_revue: article.article_revue || ''
+      categorie_id: article.categorie_id,
+      localisation_id: article.localisation_id || '',
+      revue_id: article.revue_id || ''
     });
 
     setTimeout(() => {
@@ -430,8 +527,7 @@ export class ArticleComponent implements OnInit {
     if (newCategorie && newCategorie.trim() !== '') {
       try {
         const categorieId = await this.getOrCreateCategorie(newCategorie.trim());
-        await this.loadCategories();
-        this.editForm.get('libelle_categorie')?.setValue(newCategorie.trim());
+        this.editForm.get('categorie_id')?.setValue(categorieId);
         alert(`Catégorie "${newCategorie}" ajoutée avec succès.`);
       } catch (error) {
         console.error('Erreur lors de l\'ajout de la catégorie via le bouton + :', error);
@@ -446,12 +542,26 @@ export class ArticleComponent implements OnInit {
     if (newLocalisation && newLocalisation.trim() !== '') {
       try {
         const localisationId = await this.getOrCreateLocalisation(newLocalisation.trim());
-        await this.loadLocalisations();
-        this.editForm.get('libelle_localisation')?.setValue(newLocalisation.trim());
+        this.editForm.get('localisation_id')?.setValue(localisationId);
         alert(`Localisation "${newLocalisation}" ajoutée avec succès.`);
       } catch (error) {
         console.error('Erreur lors de l\'ajout de la localisation via le bouton + :', error);
         alert('Erreur lors de l\'ajout de la localisation.');
+      }
+    }
+  }
+
+  // Méthode pour ajouter une nouvelle revue via un prompt
+  async showAddRevuePrompt() {
+    const newRevue = prompt('Entrez le nom de la nouvelle revue :');
+    if (newRevue && newRevue.trim() !== '') {
+      try {
+        const revueId = await this.getOrCreateRevue(newRevue.trim());
+        this.editForm.get('revue_id')?.setValue(revueId);
+        alert(`Revue "${newRevue}" ajoutée avec succès.`);
+      } catch (error) {
+        console.error('Erreur lors de l\'ajout de la revue via le bouton + :', error);
+        alert('Erreur lors de l\'ajout de la revue.');
       }
     }
   }
@@ -484,25 +594,15 @@ export class ArticleComponent implements OnInit {
 
       try {
         const formValue = this.editForm.value;
-        // Récupère ou crée la catégorie et obtient son ID
-        const categorieId = await this.getOrCreateCategorie(formValue.libelle_categorie);
-        
-        let localisationId = null;
-        if (formValue.libelle_localisation && formValue.libelle_localisation.trim()) {
-          localisationId = await this.getOrCreateLocalisation(formValue.libelle_localisation.trim());
-        }
 
         // Prépare les données de l'article à mettre à jour
         const articleData = {
-          num_article: formValue.num_article.trim(),
           titre_article: formValue.titre_article.trim(),
           num_page: formValue.num_page ? Number(formValue.num_page) : null,
           desc_article: formValue.desc_article ? formValue.desc_article.trim() : '',
-          categorie_id: categorieId,
-          libelle_categories: formValue.libelle_categorie.trim(),
-          localisation_id: localisationId,
-          libelle_localisation: formValue.libelle_localisation ? formValue.libelle_localisation.trim() : '',
-          article_revue: formValue.article_revue ? formValue.article_revue.trim() : '',
+          categorie_id: formValue.categorie_id,
+          localisation_id: formValue.localisation_id || null,
+          revue_id: formValue.revue_id || null,
           date_modification: new Date()
         };
 
@@ -523,64 +623,6 @@ export class ArticleComponent implements OnInit {
       } finally {
         this.isUpdating = false;
       }
-    }
-  }
-
-  // Méthodes utilitaires pour récupérer les catégories et localisations par ID
-  async getCategorieById(categorieId: string): Promise<string> {
-    try {
-      const categorieDoc = await getDocs(
-        query(collection(this.firestore, 'categorie'), where('__name__', '==', categorieId))
-      );
-      if (!categorieDoc.empty) {
-        return categorieDoc.docs[0].data()['libelle_categorie'] || '';
-      }
-      return '';
-    } catch (error) {
-      console.error('Erreur récupération catégorie :', error);
-      return '';
-    }
-  }
-
-  // Méthodes utilitaires pour récupérer les localisations par ID
-  async getLocalisationById(localisationId: string): Promise<string> {
-    try {
-      const localisationDoc = await getDocs(
-        query(collection(this.firestore, 'localisation'), where('__name__', '==', localisationId))
-      );
-      if (!localisationDoc.empty) {
-        return localisationDoc.docs[0].data()['libelle_localisation'] || '';
-      }
-      return '';
-    } catch (error) {
-      console.error('Erreur récupération localisation :', error);
-      return '';
-    }
-  }
-
-  // Méthodes utilitaires pour récupérer toutes les localisations
-  async getAllLocalisations(): Promise<any[]> {
-    try {
-      const localisationCollection = collection(this.firestore, 'localisation');
-      const q = query(
-        localisationCollection, 
-        orderBy('libelle_localisation', 'asc')
-      );
-
-      const querySnapshot = await getDocs(q);
-      const localisations: any[] = [];
-
-      querySnapshot.forEach((doc) => {
-        localisations.push({
-          id: doc.id,
-          ...doc.data()
-        });
-      });
-
-      return localisations;
-    } catch (error) {
-      console.error('Erreur lors de la récupération des localisations:', error);
-      return [];
     }
   }
 }

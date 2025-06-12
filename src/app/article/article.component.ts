@@ -38,6 +38,13 @@ export class ArticleComponent implements OnInit {
   selectedArticleId: string | null = null;
   showForm = false;
 
+  // Variables pour la pagination
+  currentPage = 1;
+  itemsPerPage = 10;
+  totalItems = 0;
+  totalPages = 0;
+  paginatedResults: any[] = [];
+
   // Tables pour les données de référence
   table_categorie: any[] = [];
   table_localisation: any[] = [];
@@ -65,6 +72,75 @@ export class ArticleComponent implements OnInit {
     await this.loadCategories();
     await this.loadLocalisations();
     await this.loadRevues();
+  }
+
+  // Méthode pour calculer la pagination
+  updatePagination() {
+    this.totalItems = this.searchResults.length;
+    this.totalPages = Math.ceil(this.totalItems / this.itemsPerPage);
+    
+    // S'assurer que la page courante est valide
+    if (this.currentPage > this.totalPages && this.totalPages > 0) {
+      this.currentPage = this.totalPages;
+    }
+    if (this.currentPage < 1) {
+      this.currentPage = 1;
+    }
+
+    // Calculer les résultats pour la page courante
+    const startIndex = (this.currentPage - 1) * this.itemsPerPage;
+    const endIndex = startIndex + this.itemsPerPage;
+    this.paginatedResults = this.searchResults.slice(startIndex, endIndex);
+  }
+
+  // Méthodes de navigation pour la pagination
+  goToPage(page: number) {
+    if (page >= 1 && page <= this.totalPages) {
+      this.currentPage = page;
+      this.updatePagination();
+    }
+  }
+
+  // Afficher la page d'avant
+  previousPage() {
+    if (this.currentPage > 1) {
+      this.currentPage--;
+      this.updatePagination();
+    }
+  }
+
+  // Afficher la prochaine page
+  nextPage() {
+    if (this.currentPage < this.totalPages) {
+      this.currentPage++;
+      this.updatePagination();
+    }
+  }
+
+  // Méthode pour obtenir les numéros de pages à afficher
+  getPageNumbers(): number[] {
+    const pages: number[] = [];
+    const maxVisiblePages = 5;
+    
+    if (this.totalPages <= maxVisiblePages) {
+      // Si moins de 5 pages, afficher toutes
+      for (let i = 1; i <= this.totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      let start = Math.max(1, this.currentPage - 2);
+      let end = Math.min(this.totalPages, start + maxVisiblePages - 1);
+      
+      if (end - start < maxVisiblePages - 1) {
+        start = Math.max(1, end - maxVisiblePages + 1);
+      }
+      
+      for (let i = start; i <= end; i++) {
+        pages.push(i);
+      }
+    }
+    
+    return pages;
   }
 
   // Méthode pour charger les catégories
@@ -158,8 +234,6 @@ export class ArticleComponent implements OnInit {
       } else {
         const nouvelleCategorieData = {
           libelle_categorie: libelle,
-          date_creation: new Date(),
-          date_modification: new Date()
         };
 
         const docRef = await addDoc(categorieCollection, nouvelleCategorieData);
@@ -205,8 +279,6 @@ export class ArticleComponent implements OnInit {
       } else {
         const nouvelleLocalisationData = {
           libelle_localisation: libelle,
-          date_creation: new Date(),
-          date_modification: new Date()
         };
 
         const docRef = await addDoc(localisationCollection, nouvelleLocalisationData);
@@ -252,8 +324,6 @@ export class ArticleComponent implements OnInit {
     } else {
       const nouvelleRevueData = {
         titre_revue: libelle,
-        date_creation: new Date(), // Ajout des dates pour cohérence
-        date_modification: new Date()
       };
 
       const docRef = await addDoc(revueCollection, nouvelleRevueData);
@@ -303,6 +373,7 @@ export class ArticleComponent implements OnInit {
       this.isSearching = true;
       this.searchError = null;
       this.searchResults = [];
+      this.currentPage = 1; // Reset à la première page
 
       try {
         const searchTerm = this.searchForm.value.searchTerm.trim();
@@ -360,6 +431,9 @@ export class ArticleComponent implements OnInit {
           this.searchError = 'Aucun résultat trouvé avec ces critères';
         }
 
+        // Mettre à jour la pagination après la recherche
+        this.updatePagination();
+
       } catch (error) {
         console.error('Erreur lors de la recherche:', error);
         this.searchError = 'Une erreur est survenue lors de la recherche: ' + (error as Error).message;
@@ -374,6 +448,7 @@ export class ArticleComponent implements OnInit {
     this.isSearching = true;
     this.searchError = null;
     this.searchResults = [];
+    this.currentPage = 1; // Reset à la première page
 
     try {
       const articleCollection = collection(this.firestore, 'article');
@@ -388,6 +463,10 @@ export class ArticleComponent implements OnInit {
           ...doc.data()
         });
       });
+
+      // Mettre à jour la pagination après le chargement
+      this.updatePagination();
+
     } catch (error) {
       console.error('Erreur lors du chargement des articles:', error);
       this.searchError = 'Une erreur est survenue lors du chargement des articles';
@@ -403,7 +482,11 @@ export class ArticleComponent implements OnInit {
       searchType: 'titre_article'
     });
     this.searchResults = [];
+    this.paginatedResults = [];
     this.searchError = null;
+    this.currentPage = 1;
+    this.totalItems = 0;
+    this.totalPages = 0;
   }
 
   // Méthode pour obtenir le placeholder du champ de recherche en fonction du type de recherche sélectionné
@@ -455,8 +538,6 @@ export class ArticleComponent implements OnInit {
           categorie_id: formValue.categorie_id,
           localisation_id: formValue.localisation_id || null,
           revue_id: formValue.revue_id || null,
-          date_creation: new Date(),
-          date_modification: new Date()
         };
 
         const articleCollection = collection(this.firestore, 'article');
@@ -603,7 +684,6 @@ export class ArticleComponent implements OnInit {
           categorie_id: formValue.categorie_id,
           localisation_id: formValue.localisation_id || null,
           revue_id: formValue.revue_id || null,
-          date_modification: new Date()
         };
 
         // Met à jour l'article dans Firestore

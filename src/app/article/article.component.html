@@ -158,9 +158,9 @@
     @if (isSearching) {
       <div class="loading">Chargement des articles...</div>
     }
-    @if (!isSearching && searchResults.length > 0) {
+    @if (!isSearching && paginatedResults.length > 0) {
       <div class="articles-grid">
-        @for (article of searchResults; track article.id) {
+        @for (article of paginatedResults; track article.id) {
           <div class="article-card">
             <h3 class="article-title">{{ article.titre_article }}</h3>
             @if (article.num_page) {
@@ -185,6 +185,31 @@
           </div>
         }
       </div>
+
+      <!-- Contrôles de pagination -->
+      @if (totalPages > 1) {
+        <div class="pagination-controls">
+          <button (click)="previousPage()" [disabled]="currentPage === 1" class="pagination-btn">
+            Précédent
+          </button>
+          
+          @for (page of getPageNumbers(); track page) {
+            <button (click)="goToPage(page)"
+                    [class.active]="page === currentPage"
+                    class="pagination-number">
+              {{page}}
+            </button>
+          }
+          
+          <button (click)="nextPage()" [disabled]="currentPage === totalPages" class="pagination-btn">
+            Suivant
+          </button>
+          
+          <span class="pagination-info">
+            Page {{currentPage}} sur {{totalPages}} ({{totalItems}} articles)
+          </span>
+        </div>
+      }
     }
     @if (!isSearching && searchResults.length === 0) {
       <div class="no-results">

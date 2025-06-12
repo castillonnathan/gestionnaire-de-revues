@@ -77,7 +77,7 @@ private fb = inject(FormBuilder); // Injection du FormBuilder pour créer des fo
             });
 
             // ce code permet de faire un tri car le LIKE n'est pas disponible avec FIRESTORE
-            // cette procédure est égal à Select * From revue Where titre_revue LIKE searchTerm
+            // cette procédure est égale à Select * From revue Where titre_revue LIKE searchTerm
             this.searchResults.sort((a, b) => {
               const titleA = a.titre_revue?.toLowerCase() || '';
               const titleB = b.titre_revue?.toLowerCase() || '';
@@ -178,9 +178,9 @@ private fb = inject(FormBuilder); // Injection du FormBuilder pour créer des fo
     this.searchError = null; // Réinitialisation de l'erreur de recherche
   }
 
-  getSearchPlaceholder(): string { // Méthode pour obtenir le placeholder dynamique en fonction du type de recherche sélectionné
+  getSearchPlaceholder(): string { // Méthode pour obtenir le placeholder dynamique 
     const searchType = this.searchForm.get('searchType')?.value; // Récupération du type de recherche sélectionné
-    switch (searchType) { // Mettre les données en dut dans la barre de recherche comme exemple
+    switch (searchType) { // Mettre les données en dur dans la barre de recherche 
       case 'titre': return 'Ex: Science et Vie';
       case 'id': return 'Ex: 123';
       case 'date': return 'Ex: 2024-03-15';
@@ -300,27 +300,27 @@ private fb = inject(FormBuilder); // Injection du FormBuilder pour créer des fo
   }
 
     async onUpdate() {
-  if (this.editForm.valid && this.selectedRevueId) {
-    this.isUpdating = true;
-    this.updateSuccess = false;
-    this.updateError = null;
+      if (this.editForm.valid && this.selectedRevueId) {
+        this.isUpdating = true;
+        this.updateSuccess = false;
+        this.updateError = null;
 
-    try {
-      const formValue = this.editForm.value;
+        try {
+          const formValue = this.editForm.value;
 
-      const revueData = {
-        num_revue: Number(formValue.numRevue),
-        titre_revue: formValue.titre.trim(),
-        date_sortie: formValue.dateSortie
-      };
+          const revueData = {
+            num_revue: Number(formValue.numRevue),
+            titre_revue: formValue.titre.trim(),
+            date_sortie: formValue.dateSortie
+          };
 
-      const docRef = doc(this.firestore, 'revue', this.selectedRevueId);
-      await updateDoc(docRef, revueData);
+          const docRef = doc(this.firestore, 'revue', this.selectedRevueId);
+          await updateDoc(docRef, revueData);
 
-      this.updateSuccess = true;
-      this.isEditing = false;
-      this.editForm.reset();
-      await this.searchAllRevues();
+          this.updateSuccess = true;
+          this.isEditing = false;
+          this.editForm.reset();
+          await this.searchAllRevues();
 
     } catch (error) {
       console.error('Erreur lors de la mise à jour:', error);

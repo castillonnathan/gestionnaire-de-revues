@@ -3,10 +3,11 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } 
 import { Firestore, collection, addDoc, query, where, getDocs, orderBy, doc, updateDoc, deleteDoc } from '@angular/fire/firestore';
 import { CommonModule } from '@angular/common';
 import { identifierName } from '@angular/compiler';
+import { HeaderComponent } from "../header/header.component";
 
 @Component({
   selector: 'app-article',
-  imports: [CommonModule, ReactiveFormsModule, FormsModule],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, HeaderComponent],
   standalone: true,
   templateUrl: './article.component.html',
   styleUrl: './article.component.css'

@@ -1,0 +1,109 @@
+<div class="auth-container">
+  <div class="auth-form-container">
+    <div class="auth-header">
+      <h1>{{ isLoginMode ? 'Connexion' : 'Inscription' }}</h1>
+      <p>{{ isLoginMode ? 'Connectez-vous à votre compte' : 'Créez votre nouveau compte' }}</p>
+    </div>
+
+    @if (successMessage) {
+      <div class="success-message">
+        <span>✅</span>
+        <span>{{ successMessage }}</span>
+      </div>
+    }
+
+    @if (errorMessage) {
+      <div class="global-error">
+        <span>⚠️</span>
+        <span>{{ errorMessage }}</span>
+      </div>
+    }
+
+    <form [formGroup]="authForm" (ngSubmit)="onSubmit()">
+      <div class="form-group">
+        <label for="email">Adresse email</label>
+        <input
+          type="email"
+          id="email"
+          class="form-control"
+          [class.error]="isFieldInvalid('email')"
+          placeholder="votre@email.com"
+          formControlName="email">
+        @if (isFieldInvalid('email')) {
+          <div class="error-message">
+            <span>⚠️</span>
+            <span>Veuillez saisir une adresse email valide</span>
+          </div>
+        }
+      </div>
+
+      <div class="form-group">
+        <label for="password">Mot de passe</label>
+        <div class="input-container">
+          <input
+            [type]="showPassword ? 'text' : 'password'"
+            id="password"
+            class="form-control"
+            [class.error]="isFieldInvalid('password')"
+            placeholder="••••••••"
+            formControlName="password">
+          <button type="button" class="password-toggle" (click)="togglePassword()">
+            {{ showPassword ? '🔒' : '👁️' }}
+          </button>
+        </div>
+        @if (isFieldInvalid('password')) {
+          <div class="error-message">
+            <span>⚠️</span>
+            <span>Le mot de passe doit contenir au moins 6 caractères</span>
+          </div>
+        }
+      </div>
+
+      @if (!isLoginMode) {
+        <div class="form-group">
+          <label for="confirmPassword">Confirmer le mot de passe</label>
+          <input
+            type="password"
+            id="confirmPassword"
+            class="form-control"
+            [class.error]="isFieldInvalid('confirmPassword')"
+            placeholder="••••••••"
+            formControlName="confirmPassword">
+          @if (isFieldInvalid('confirmPassword')) {
+            <div class="error-message">
+              <span>⚠️</span>
+              <span>Les mots de passe ne correspondent pas</span>
+            </div>
+          }
+        </div>
+      }
+
+      <button type="submit" class="btn btn-primary" [disabled]="isLoading || authForm.invalid">
+        @if (isLoading) {
+          <div class="loading-spinner"></div>
+        }
+        <span>{{ isLoading ? 'Chargement...' : (isLoginMode ? 'Se connecter' : 'Créer le compte') }}</span>
+      </button>
+    </form>
+
+    <div class="divider">
+      <p>Ou continuer avec</p>
+    </div>
+
+    <button type="button" class="btn btn-social btn-google" (click)="socialLogin('google')" [disabled]="isLoading">
+      <img src="/assets/logo_google.png">
+      <span>Google</span>
+    </button>
+
+    <button type="button" class="btn btn-social btn-facebook" (click)="socialLogin('facebook')" [disabled]="isLoading">
+      <img src="/assets/logo_facebook.png">
+      <span>Facebook</span>
+    </button>
+
+    <div class="mode-toggle">
+      <button type="button" (click)="toggleMode()">
+        {{ isLoginMode ? 'Pas encore de compte ? S\'inscrire' : 'Déjà un compte ? Se connecter' }}
+      </button>
+    </div>
+  </div>
+</div>

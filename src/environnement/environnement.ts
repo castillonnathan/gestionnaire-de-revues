@@ -6,5 +6,5 @@ export const environnement = {firebaseConfig: {
   messagingSenderId: "646427250946",
   appId: "1:646427250946:web:2507cef4edaf530140721b",
   measurementId: "G-WCT99S00JF"
-}
+  }
 } 

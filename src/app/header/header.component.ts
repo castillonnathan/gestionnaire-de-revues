@@ -1,4 +1,3 @@
-// header.component.ts
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Router, NavigationEnd } from '@angular/router';
 import { Subscription } from 'rxjs';
@@ -21,7 +20,7 @@ export class HeaderComponent implements OnInit, OnDestroy {
     // Mise à jour initiale
     this.updateHeaderFromRoute(this.router.url);
     
-    // Écouter les changements de route
+    // Permet de savoir quand effectuer les changements de route
     this.routerSubscription = this.router.events
       .pipe(filter(event => event instanceof NavigationEnd))
       .subscribe((event: NavigationEnd) => {
@@ -34,23 +33,26 @@ export class HeaderComponent implements OnInit, OnDestroy {
   }
 
   private updateHeaderFromRoute(url: string) {
-    // Nettoyer l'URL
+    // Enlève tout ce qui contient ? et #
     const cleanUrl = url.split('?')[0].split('#')[0];
     
-    // Configuration simple pour les 3 pages
+    // Conditions pour les paramètres
     if (cleanUrl.includes('/revue')) {
       this.title = 'Gestion des Revues';
       this.subtitle = 'Gérez vos revues comme un pro';
     } else if (cleanUrl.includes('/article')) {
       this.title = 'Gestion des Articles';
-      this.subtitle = 'Gérez vos revues tel un prodige';
+      this.subtitle = 'Gérez vos articles tel un prodige';
     } else if (cleanUrl.includes('/a-propos')) {
       this.title = 'À Propos';
       this.subtitle = 'Informations sur l\'application';
+    } else if (cleanUrl.includes('/authentification')) {
+      this.title = 'Connexion';
+      this.subtitle = 'Connectez vous';
     } else {
       // Valeurs par défaut pour toutes les autres pages
-      this.title = 'Gestion des Documents';
-      this.subtitle = 'Système de gestion de revues';
+      this.title = 'Bienvenue';
+      this.subtitle = 'Sur le gestionnaire de revue';
+      }
     }
   }
-}
